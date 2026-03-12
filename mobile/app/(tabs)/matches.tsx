@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 import type { AllMatchesData, LiveMatch, StandingsData, StandingEntry } from "@/lib/types";
 
 const LEAGUE_TABS = [
@@ -101,6 +102,7 @@ export default function MatchesScreen() {
   const [viewMode, setViewMode] = useState<typeof VIEW_MODES[number]>("Upcoming");
   const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
+  const { t } = useI18n();
   const router = useRouter();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -176,7 +178,7 @@ export default function MatchesScreen() {
       <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
         <View style={styles.titleRow}>
           <Ionicons name="football" size={24} color={colors.accent} />
-          <Text style={[styles.title, { color: colors.text }]}>Matches</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t.matches}</Text>
         </View>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
           {totalMatches} {viewMode === "Standings" ? "teams" : "matches"}
@@ -230,7 +232,7 @@ export default function MatchesScreen() {
         {isLoading && (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={colors.accent} size="large" />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading matches...</Text>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t.loadingMatches}</Text>
           </View>
         )}
 

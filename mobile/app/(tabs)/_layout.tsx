@@ -4,6 +4,7 @@ import { Platform, View } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -11,6 +12,7 @@ export default function TabLayout() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -40,7 +42,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
+          title: t.dashboard,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name={"grid-outline" as IoniconsName} size={size} color={color} />
           ),
@@ -49,7 +51,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="matches"
         options={{
-          title: "Matches",
+          title: t.matches,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name={"football-outline" as IoniconsName} size={size} color={color} />
           ),
@@ -58,7 +60,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="value-bets"
         options={{
-          title: "Value Bets",
+          title: t.valueBets,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="lightning-bolt" size={size} color={color} />
           ),
@@ -67,7 +69,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "History",
+          title: t.history,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name={"time-outline" as IoniconsName} size={size} color={color} />
           ),
@@ -82,7 +84,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t.profile,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name={"person-outline" as IoniconsName} size={size} color={color} />
           ),

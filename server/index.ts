@@ -79,5 +79,5 @@ app.get("*", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`WC2026 Betting API v2.0 running on port ${PORT}`);
+  console.log(`KickSight API v2.0 running on port ${PORT}`);
 });

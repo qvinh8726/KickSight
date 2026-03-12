@@ -9,6 +9,7 @@ import { queryClient, API_URL, setAuthToken } from "@/lib/query-client";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 import { NotificationsProvider } from "@/lib/notifications-context";
+import { I18nProvider } from "@/lib/i18n";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,8 +64,8 @@ function GoogleOAuthProcessor({ onDone }: { onDone: () => void }) {
         const data = await res.json();
         if (res.ok && data.token) {
           setAuthToken(data.token);
-          localStorage.setItem("wc2026_auth_token", data.token);
-          localStorage.setItem("wc2026_auth_user", JSON.stringify(data.user));
+          localStorage.setItem("kicksight_auth_token", data.token);
+          localStorage.setItem("kicksight_auth_user", JSON.stringify(data.user));
           window.location.href = "/";
           return;
         }
@@ -106,20 +107,22 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <NotificationsProvider>
-        <AuthProvider>
-          <QueryClientProvider client={queryClient}>
-            <ThemedStatusBar />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
-            </Stack>
-          </QueryClientProvider>
-        </AuthProvider>
-      </NotificationsProvider>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider>
+        <NotificationsProvider>
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <ThemedStatusBar />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
+              </Stack>
+            </QueryClientProvider>
+          </AuthProvider>
+        </NotificationsProvider>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 

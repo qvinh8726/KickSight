@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   Platform,
   Animated,
   Switch,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n, LANGUAGES } from "@/lib/i18n";
 import { useRouter } from "expo-router";
 
 export default function ProfileScreen() {
@@ -20,7 +22,9 @@ export default function ProfileScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const { user, logout } = useAuth();
   const { colors, isDark, toggle } = useTheme();
+  const { t, language, setLanguage } = useI18n();
   const router = useRouter();
+  const [showLangModal, setShowLangModal] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -31,6 +35,8 @@ export default function ProfileScreen() {
     logout();
     router.replace("/(auth)/login");
   };
+
+  const currentLang = LANGUAGES.find(l => l.code === language);
 
   const initials = user?.name
     ?.split(" ")
@@ -50,12 +56,12 @@ export default function ProfileScreen() {
           <Text style={[styles.userEmail, { color: colors.textMuted }]}>{user?.email || ""}</Text>
           <View style={[styles.memberBadge, { backgroundColor: colors.accentBg }]}>
             <Ionicons name="shield-checkmark" size={12} color={colors.accent} />
-            <Text style={[styles.memberText, { color: colors.accent }]}>Pro Member</Text>
+            <Text style={[styles.memberText, { color: colors.accent }]}>{t.proMember}</Text>
           </View>
         </Animated.View>
 
         <Animated.View style={{ opacity: fadeAnim }}>
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>SETTINGS</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t.settings}</Text>
 
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -63,13 +69,13 @@ export default function ProfileScreen() {
             activeOpacity={0.6}
           >
             <Ionicons name="notifications-outline" size={20} color={colors.textSecondary} />
-            <Text style={[styles.menuLabel, { color: colors.text }]}>Notifications</Text>
+            <Text style={[styles.menuLabel, { color: colors.text }]}>{t.notificationSettings}</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
           </TouchableOpacity>
 
           <View style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name={isDark ? "moon" : "sunny"} size={20} color={colors.textSecondary} />
-            <Text style={[styles.menuLabel, { color: colors.text }]}>Dark Mode</Text>
+            <Text style={[styles.menuLabel, { color: colors.text }]}>{t.darkMode}</Text>
             <Switch
               value={isDark}
               onValueChange={toggle}
@@ -78,23 +84,74 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <MenuItem icon="globe-outline" label="Language" value="English" colors={colors} />
-          <MenuItem icon="analytics-outline" label="Model Version" value="Poisson AI v2" colors={colors} />
+          <TouchableOpacity
+            style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowLangModal(true)}
+            activeOpacity={0.6}
+          >
+            <Ionicons name="globe-outline" size={20} color={colors.textSecondary} />
+            <Text style={[styles.menuLabel, { color: colors.text }]}>{t.language}</Text>
+            <Text style={[styles.menuValue, { color: colors.textMuted }]}>{currentLang?.flag} {currentLang?.nativeName}</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
 
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>ABOUT</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t.about}</Text>
 
-          <MenuItem icon="information-circle-outline" label="App Version" value="2.0.0" colors={colors} />
-          <MenuItem icon="document-text-outline" label="Terms of Service" colors={colors} />
-          <MenuItem icon="shield-outline" label="Privacy Policy" colors={colors} />
+          <MenuItem icon="information-circle-outline" label={t.version} value="2.0.0" colors={colors} />
+          <MenuItem icon="document-text-outline" label={t.termsOfService} colors={colors} />
+          <MenuItem icon="shield-outline" label={t.privacyPolicy} colors={colors} />
 
           <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: colors.dangerBg, borderColor: colors.dangerBorder }]} onPress={handleLogout} activeOpacity={0.7}>
             <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-            <Text style={[styles.logoutText, { color: colors.danger }]}>Sign Out</Text>
+            <Text style={[styles.logoutText, { color: colors.danger }]}>{t.signOut}</Text>
           </TouchableOpacity>
         </Animated.View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <Modal
+        visible={showLangModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowLangModal(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t.selectLanguage}</Text>
+            <ScrollView style={styles.langList} showsVerticalScrollIndicator={false}>
+              {LANGUAGES.map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.langItem,
+                    { borderBottomColor: colors.border },
+                    language === lang.code && { backgroundColor: colors.accentBg },
+                  ]}
+                  onPress={() => {
+                    setLanguage(lang.code);
+                    setShowLangModal(false);
+                  }}
+                  activeOpacity={0.6}
+                >
+                  <Text style={styles.langFlag}>{lang.flag}</Text>
+                  <View style={styles.langInfo}>
+                    <Text style={[styles.langName, { color: colors.text }]}>{lang.nativeName}</Text>
+                    <Text style={[styles.langNameEn, { color: colors.textMuted }]}>{lang.name}</Text>
+                  </View>
+                  {language === lang.code && (
+                    <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -148,4 +205,40 @@ const styles = StyleSheet.create({
     borderRadius: 12, padding: 14, gap: 8, marginTop: 20, borderWidth: 1,
   },
   logoutText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: 520,
+    borderWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  langList: {},
+  langItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderRadius: 10,
+    gap: 12,
+  },
+  langFlag: { fontSize: 24 },
+  langInfo: { flex: 1 },
+  langName: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  langNameEn: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
 });

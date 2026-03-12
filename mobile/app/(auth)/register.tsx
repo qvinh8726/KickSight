@@ -15,11 +15,13 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { register } = useAuth();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,6 +38,14 @@ export default function RegisterScreen() {
       Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 8, useNativeDriver: true }),
     ]).start();
   }, []);
+
+  const getStrengthLabel = () => {
+    if (password.length === 0) return "";
+    if (password.length < 4) return t.weak;
+    if (password.length < 6) return t.fair;
+    if (password.length < 8) return t.good;
+    return t.strong;
+  };
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
@@ -66,8 +76,8 @@ export default function RegisterScreen() {
             <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="arrow-back" size={22} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Create Account</Text>
-            <Text style={[styles.headerSub, { color: colors.textMuted }]}>Join WC2026 Betting AI</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t.createAccount}</Text>
+            <Text style={[styles.headerSub, { color: colors.textMuted }]}>{t.joinApp}</Text>
           </Animated.View>
 
           <Animated.View style={[styles.formSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -81,17 +91,17 @@ export default function RegisterScreen() {
             <View style={styles.inputGroup}>
               <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <Ionicons name="person-outline" size={18} color={colors.textMuted} style={styles.inputIcon} />
-                <TextInput style={[styles.input, { color: colors.text }]} placeholder="Full name" placeholderTextColor={colors.textMuted} value={name} onChangeText={setName} autoCapitalize="words" />
+                <TextInput style={[styles.input, { color: colors.text }]} placeholder={t.fullName} placeholderTextColor={colors.textMuted} value={name} onChangeText={setName} autoCapitalize="words" />
               </View>
 
               <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={styles.inputIcon} />
-                <TextInput style={[styles.input, { color: colors.text }]} placeholder="Email address" placeholderTextColor={colors.textMuted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+                <TextInput style={[styles.input, { color: colors.text }]} placeholder={t.emailAddress} placeholderTextColor={colors.textMuted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
               </View>
 
               <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={styles.inputIcon} />
-                <TextInput style={[styles.input, { color: colors.text }]} placeholder="Password (min 6 characters)" placeholderTextColor={colors.textMuted} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} />
+                <TextInput style={[styles.input, { color: colors.text }]} placeholder={t.password} placeholderTextColor={colors.textMuted} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                   <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color={colors.textMuted} />
                 </TouchableOpacity>
@@ -105,7 +115,7 @@ export default function RegisterScreen() {
               <View style={[styles.strengthBar, { backgroundColor: colors.border }, password.length >= 8 && { backgroundColor: colors.accent }]} />
             </View>
             <Text style={[styles.strengthLabel, { color: colors.textMuted }]}>
-              {password.length === 0 ? "" : password.length < 6 ? "Weak" : password.length < 8 ? "Good" : "Strong"}
+              {getStrengthLabel()}
             </Text>
 
             <TouchableOpacity
@@ -117,13 +127,13 @@ export default function RegisterScreen() {
               {loading ? (
                 <ActivityIndicator color="#0B0F1A" size="small" />
               ) : (
-                <Text style={styles.registerBtnText}>Create Account</Text>
+                <Text style={styles.registerBtnText}>{t.register}</Text>
               )}
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.switchRow} onPress={() => router.back()}>
-              <Text style={[styles.switchText, { color: colors.textMuted }]}>Already have an account? </Text>
-              <Text style={[styles.switchLink, { color: colors.accent }]}>Sign in</Text>
+              <Text style={[styles.switchText, { color: colors.textMuted }]}>{t.haveAccount} </Text>
+              <Text style={[styles.switchLink, { color: colors.accent }]}>{t.signInHere}</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>

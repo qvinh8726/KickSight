@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "WC2026 Betting AI",
-    "slug": "wc2026-betting-ai",
-    "version": "1.0.0",
+    "name": "KickSight",
+    "slug": "kicksight",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "wc2026",
+    "scheme": "kicksight",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wc2026.bettingai"
+      "bundleIdentifier": "com.kicksight.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B0F1A"
       },
-      "package": "com.wc2026.bettingai"
+      "package": "com.kicksight.app"
     },
     "web": {
       "bundler": "metro",

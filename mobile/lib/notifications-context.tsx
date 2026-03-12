@@ -20,8 +20,8 @@ interface NotifState {
   clearAll: () => void;
 }
 
-const STORAGE_KEY = "wc2026_notifications";
-const CLEARED_KEY = "wc2026_notifications_cleared";
+const STORAGE_KEY = "kicksight_notifications";
+const CLEARED_KEY = "kicksight_notifications_cleared";
 
 const NotifContext = createContext<NotifState>({
   notifications: [],

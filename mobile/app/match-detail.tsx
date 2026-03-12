@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { apiRequest } from "@/lib/query-client";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 
 function TeamBadge({ uri, size = 48 }: { uri: string | null; size?: number }) {
   if (!uri) return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#1C254040" }} />;
@@ -66,6 +67,7 @@ export default function MatchDetailScreen() {
   const topPad = Platform.OS === "web" ? 16 : insets.top;
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const params = useLocalSearchParams<{
     leagueKey: string;
     espnId: string;
@@ -128,7 +130,7 @@ export default function MatchDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.topBarTitle, { color: colors.textMuted }]}>{params.league || "Match Detail"}</Text>
+        <Text style={[styles.topBarTitle, { color: colors.textMuted }]}>{params.league || t.matchDetail}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -160,7 +162,7 @@ export default function MatchDetailScreen() {
               )}
               {isFinished && (
                 <View style={[styles.ftChip, { backgroundColor: colors.textMuted + "20" }]}>
-                  <Text style={[styles.ftChipText, { color: colors.textMuted }]}>Full Time</Text>
+                  <Text style={[styles.ftChipText, { color: colors.textMuted }]}>{t.fullTime}</Text>
                 </View>
               )}
               {!hasScore && (
@@ -177,11 +179,11 @@ export default function MatchDetailScreen() {
 
           <View style={styles.formRow}>
             <View style={styles.formCol}>
-              <Text style={[styles.formLabel, { color: colors.textMuted }]}>Form</Text>
+              <Text style={[styles.formLabel, { color: colors.textMuted }]}>{t.form}</Text>
               <FormBadges form={params.homeForm || (data as any)?.home_form || null} />
             </View>
             <View style={styles.formCol}>
-              <Text style={[styles.formLabel, { color: colors.textMuted }]}>Form</Text>
+              <Text style={[styles.formLabel, { color: colors.textMuted }]}>{t.form}</Text>
               <FormBadges form={params.awayForm || (data as any)?.away_form || null} />
             </View>
           </View>
@@ -210,7 +212,7 @@ export default function MatchDetailScreen() {
           {(data as any)?.referee && (
             <View style={styles.infoRow}>
               <Ionicons name="person-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.infoText, { color: colors.text }]}>Referee: {(data as any).referee}</Text>
+              <Text style={[styles.infoText, { color: colors.text }]}>{t.referee}: {(data as any).referee}</Text>
             </View>
           )}
         </View>
@@ -218,13 +220,13 @@ export default function MatchDetailScreen() {
         {isLoading && (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={colors.accent} size="large" />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading match details...</Text>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t.loadingDetails}</Text>
           </View>
         )}
 
         {keyEvents.length > 0 && (
           <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Key Events</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.keyEvents}</Text>
             {keyEvents.map((ev, i) => {
               let icon: any = "football-outline";
               let iconColor = colors.accent;
@@ -246,7 +248,7 @@ export default function MatchDetailScreen() {
 
         {Object.keys(homeStats).length > 0 && (
           <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Match Statistics</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.matchStatistics}</Text>
             <View style={styles.statTeamHeader}>
               <Text style={[styles.statTeamName, { color: colors.text }]}>{params.homeTeam?.split(" ").pop()}</Text>
               <Text style={[styles.statTeamName, { color: colors.text }]}>{params.awayTeam?.split(" ").pop()}</Text>
@@ -262,7 +264,7 @@ export default function MatchDetailScreen() {
 
         {h2h.length > 0 && (
           <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Head to Head</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.headToHead}</Text>
             {h2h.map((g: any, i: number) => (
               <View key={i} style={[styles.h2hRow, { borderBottomColor: i < h2h.length - 1 ? colors.border : "transparent" }]}>
                 <Text style={[styles.h2hDate, { color: colors.textMuted }]}>{g.date}</Text>

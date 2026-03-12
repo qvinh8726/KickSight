@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useNotifications, AppNotification } from "@/lib/notifications-context";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 
 const typeConfig: Record<string, { icon: string; color: string }> = {
   match: { icon: "football", color: "#3B82F6" },
@@ -37,6 +38,7 @@ export default function NotificationsScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const router = useRouter();
   const { colors, isDark } = useTheme();
+  const { t } = useI18n();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -78,7 +80,7 @@ export default function NotificationsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>Notifications</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t.notifications}</Text>
         <View style={styles.headerRight}>
           {unreadCount > 0 && (
             <TouchableOpacity onPress={markAllAsRead} style={styles.actionBtn}>
@@ -108,9 +110,9 @@ export default function NotificationsScreen() {
           {notifications.length === 0 && (
             <View style={styles.emptyState}>
               <Ionicons name="notifications-off-outline" size={48} color={colors.border} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>All caught up!</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>{t.noNotifications}</Text>
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                No notifications at the moment
+                {t.noNotifications}
               </Text>
             </View>
           )}

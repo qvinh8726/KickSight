@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 type ThemeMode = "dark" | "light";
 
-const THEME_KEY = "wc2026_theme";
+const THEME_KEY = "kicksight_theme";
 
 const darkColors = {
   bg: "#0B0F1A",

@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 import { API_URL } from "@/lib/query-client";
 
 const GOOGLE_CLIENT_ID = "1096780671141-s176tiftlpmg34hb91388536tm3ghr7c.apps.googleusercontent.com";
@@ -24,6 +25,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { login, loginWithGoogle } = useAuth();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +36,7 @@ export default function LoginScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -41,6 +44,15 @@ export default function LoginScreen() {
       Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 8, useNativeDriver: true }),
       Animated.spring(logoScale, { toValue: 1, tension: 60, friction: 6, useNativeDriver: true }),
     ]).start();
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.05, duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   const handleGoogleAccessToken = async (accessToken: string) => {
@@ -109,18 +121,18 @@ export default function LoginScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <Animated.View style={[styles.logoSection, { opacity: fadeAnim, transform: [{ scale: logoScale }] }]}>
-            <View style={[styles.logoCircle, { backgroundColor: colors.accentBg }]}>
+            <Animated.View style={[styles.logoCircle, { backgroundColor: colors.accentBg, transform: [{ scale: pulseAnim }] }]}>
               <View style={[styles.logoInner, { backgroundColor: colors.accentBg }]}>
                 <Ionicons name="football" size={32} color={colors.accent} />
               </View>
-            </View>
-            <Text style={[styles.appName, { color: colors.text }]}>WC2026 Betting AI</Text>
-            <Text style={[styles.appTagline, { color: colors.textMuted }]}>AI-powered match analysis</Text>
+            </Animated.View>
+            <Text style={[styles.appName, { color: colors.text }]}>{t.appName}</Text>
+            <Text style={[styles.appTagline, { color: colors.textMuted }]}>{t.appTagline}</Text>
           </Animated.View>
 
           <Animated.View style={[styles.formSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <Text style={[styles.formTitle, { color: colors.text }]}>Welcome back</Text>
-            <Text style={[styles.formSubtitle, { color: colors.textMuted }]}>Sign in to your account</Text>
+            <Text style={[styles.formTitle, { color: colors.text }]}>{t.welcomeBack}</Text>
+            <Text style={[styles.formSubtitle, { color: colors.textMuted }]}>{t.signInToAccount}</Text>
 
             {error ? (
               <View style={[styles.errorBox, { backgroundColor: colors.dangerBg, borderColor: colors.dangerBorder }]}>
@@ -134,7 +146,7 @@ export default function LoginScreen() {
                 <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="Email address"
+                  placeholder={t.emailAddress}
                   placeholderTextColor={colors.textMuted}
                   value={email}
                   onChangeText={setEmail}
@@ -148,7 +160,7 @@ export default function LoginScreen() {
                 <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  placeholder="Password"
+                  placeholder={t.password}
                   placeholderTextColor={colors.textMuted}
                   value={password}
                   onChangeText={setPassword}
@@ -169,13 +181,13 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color="#0B0F1A" size="small" />
               ) : (
-                <Text style={styles.loginBtnText}>Sign In</Text>
+                <Text style={styles.loginBtnText}>{t.signIn}</Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.dividerRow}>
               <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-              <Text style={[styles.dividerText, { color: colors.textMuted }]}>or continue with</Text>
+              <Text style={[styles.dividerText, { color: colors.textMuted }]}>{t.orContinueWith}</Text>
               <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             </View>
 
@@ -191,15 +203,15 @@ export default function LoginScreen() {
                 ) : (
                   <>
                     <Ionicons name="logo-google" size={20} color={colors.text} />
-                    <Text style={[styles.socialBtnText, { color: colors.text }]}>Sign in with Google</Text>
+                    <Text style={[styles.socialBtnText, { color: colors.text }]}>{t.signInWithGoogle}</Text>
                   </>
                 )}
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.switchRow} onPress={() => router.push("/(auth)/register")}>
-              <Text style={[styles.switchText, { color: colors.textMuted }]}>Don't have an account? </Text>
-              <Text style={[styles.switchLink, { color: colors.accent }]}>Create one</Text>
+              <Text style={[styles.switchText, { color: colors.textMuted }]}>{t.noAccount} </Text>
+              <Text style={[styles.switchLink, { color: colors.accent }]}>{t.createOne}</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
@@ -215,7 +227,7 @@ const styles = StyleSheet.create({
   logoSection: { alignItems: "center", marginBottom: 40 },
   logoCircle: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: 16 },
   logoInner: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
-  appName: { fontSize: 24, fontFamily: "Inter_700Bold" },
+  appName: { fontSize: 28, fontFamily: "Inter_700Bold", letterSpacing: 1 },
   appTagline: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 4 },
   formSection: {},
   formTitle: { fontSize: 22, fontFamily: "Inter_700Bold", marginBottom: 4 },

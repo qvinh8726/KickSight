@@ -38,7 +38,7 @@ export default function MatchCard({ data, index = 0 }: Props) {
         body: JSON.stringify({
           homeTeam: match.home_team,
           awayTeam: match.away_team,
-          competition: match.competition_stage || "WC2026",
+          competition: match.competition_stage || "Football",
           predictedOutcome: bestOutcome,
           confidence: Math.round(prediction.confidence * 100),
           homeWinProb: Math.round(prediction.prob_home * 100),

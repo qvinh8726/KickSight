@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { apiRequest } from "@/lib/query-client";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 import type { ValueBet } from "@/lib/types";
 
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
@@ -28,6 +29,7 @@ export default function ValueBetsScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [refreshing, setRefreshing] = React.useState(false);
   const { colors } = useTheme();
+  const { t } = useI18n();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -75,8 +77,8 @@ export default function ValueBetsScreen() {
             <MaterialCommunityIcons name="lightning-bolt" size={20} color={colors.accent} />
           </View>
           <View>
-            <Text style={[styles.title, { color: colors.text }]}>Value Bets</Text>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>AI-detected opportunities</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{t.valueBets}</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t.aiDetected}</Text>
           </View>
         </View>
       </Animated.View>
@@ -95,14 +97,14 @@ export default function ValueBetsScreen() {
               <Ionicons name="trending-up" size={16} color={colors.accent} />
             </View>
             <Text style={[styles.summaryValue, { color: colors.accent }]}>{pct(avgEdge)}</Text>
-            <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Avg Edge</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{t.avgEdge}</Text>
           </View>
           <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.summaryIcon, { backgroundColor: colors.purpleBg }]}>
               <Ionicons name="diamond-outline" size={16} color={colors.purple} />
             </View>
             <Text style={[styles.summaryValue, { color: colors.purple }]}>{pct(totalEV)}</Text>
-            <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Total EV</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{t.totalEV}</Text>
           </View>
         </Animated.View>
       )}

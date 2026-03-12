@@ -20,6 +20,7 @@ import { apiRequest, queryClient } from "@/lib/query-client";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { useNotifications } from "@/lib/notifications-context";
+import { useI18n } from "@/lib/i18n";
 import type { DashboardData, AllMatchesData, LiveMatch } from "@/lib/types";
 
 function AnimatedCounter({ value, suffix = "", color }: { value: number; suffix?: string; color?: string }) {
@@ -95,6 +96,7 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const { unreadCount } = useNotifications();
+  const { t } = useI18n();
   const router = useRouter();
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -136,9 +138,9 @@ export default function DashboardScreen() {
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 18) return "Good afternoon";
-    return "Good evening";
+    if (h < 12) return t.goodMorning;
+    if (h < 18) return t.goodAfternoon;
+    return t.goodEvening;
   };
 
   const navigateToMatch = (m: LiveMatch) => {
@@ -179,7 +181,7 @@ export default function DashboardScreen() {
           </View>
           <View>
             <Text style={[styles.greeting, { color: colors.text }]}>{greeting()}, {user?.name?.split(" ")[0] || "User"}</Text>
-            <Text style={[styles.logoSub, { color: colors.textMuted }]}>WC2026 Betting AI</Text>
+            <Text style={[styles.logoSub, { color: colors.textMuted }]}>{t.appName}</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -206,7 +208,7 @@ export default function DashboardScreen() {
         {isLoading && (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={colors.accent} size="large" />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading predictions...</Text>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t.loadingMatches}</Text>
           </View>
         )}
 
@@ -215,10 +217,10 @@ export default function DashboardScreen() {
             <View style={[styles.errorIconCircle, { backgroundColor: colors.dangerBg }]}>
               <Ionicons name="cloud-offline-outline" size={28} color={colors.danger} />
             </View>
-            <Text style={[styles.errorTitle, { color: colors.text }]}>Connection Error</Text>
-            <Text style={[styles.errorText, { color: colors.textMuted }]}>Could not reach the server</Text>
+            <Text style={[styles.errorTitle, { color: colors.text }]}>{t.connectionError}</Text>
+            <Text style={[styles.errorText, { color: colors.textMuted }]}>{t.couldNotReach}</Text>
             <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => refetch()}>
-              <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
+              <Text style={[styles.retryText, { color: colors.accent }]}>{t.retry}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -231,21 +233,21 @@ export default function DashboardScreen() {
                   <Ionicons name="football-outline" size={18} color={colors.blue} />
                 </View>
                 <AnimatedCounter value={data.stats.upcoming_matches} color={colors.text} />
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Matches</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t.matchesCount}</Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: colors.cardAccent, borderColor: colors.borderAccent }]}>
                 <View style={[styles.statIconBg, { backgroundColor: colors.accentBg }]}>
                   <Ionicons name="flash" size={18} color={colors.accent} />
                 </View>
                 <AnimatedCounter value={data.stats.value_bets} color={colors.text} />
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Value Bets</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t.valueBets}</Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={[styles.statIconBg, { backgroundColor: colors.purpleBg }]}>
                   <Ionicons name="shield-checkmark-outline" size={18} color={colors.purple} />
                 </View>
                 <AnimatedCounter value={Math.round(data.stats.avg_confidence * 100)} suffix="%" color={colors.text} />
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Confidence</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t.confidence}</Text>
               </View>
             </Animated.View>
 
@@ -253,7 +255,7 @@ export default function DashboardScreen() {
               <Ionicons name="hardware-chip-outline" size={14} color={colors.accent} />
               <Text style={[styles.modelText, { color: colors.text }]}>{data.stats.model}</Text>
               <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
-              <Text style={[styles.liveTextBadge, { color: colors.accent }]}>Live</Text>
+              <Text style={[styles.liveTextBadge, { color: colors.accent }]}>{t.live}</Text>
             </View>
           </>
         )}
@@ -263,10 +265,10 @@ export default function DashboardScreen() {
             <View style={styles.sectionRow}>
               <View style={styles.sectionLeft}>
                 <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>RECENT RESULTS</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t.recentResults}</Text>
               </View>
               <TouchableOpacity onPress={() => router.push("/(tabs)/matches")}>
-                <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
+                <Text style={[styles.seeAll, { color: colors.accent }]}>{t.seeAll}</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
@@ -282,10 +284,10 @@ export default function DashboardScreen() {
             <View style={styles.sectionRow}>
               <View style={styles.sectionLeft}>
                 <Ionicons name="time-outline" size={16} color={colors.accent} />
-                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>UPCOMING MATCHES</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t.upcomingMatches}</Text>
               </View>
               <TouchableOpacity onPress={() => router.push("/(tabs)/matches")}>
-                <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
+                <Text style={[styles.seeAll, { color: colors.accent }]}>{t.seeAll}</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
@@ -301,7 +303,7 @@ export default function DashboardScreen() {
             <View style={styles.sectionRow}>
               <View style={styles.sectionLeft}>
                 <Ionicons name="analytics" size={16} color={colors.accent} />
-                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>WC2026 PREDICTIONS</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t.predictions.toUpperCase()}</Text>
               </View>
             </View>
             {data.matches.map((m, i) => (

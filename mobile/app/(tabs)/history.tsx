@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { apiRequest } from "@/lib/query-client";
 import { useTheme } from "@/lib/theme-context";
+import { useI18n } from "@/lib/i18n";
 
 interface Prediction {
   id: number;
@@ -57,6 +58,7 @@ export default function HistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const qc = useQueryClient();
   const { colors } = useTheme();
+  const { t } = useI18n();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -130,19 +132,19 @@ export default function HistoryScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          <Text style={[styles.title, { color: colors.text }]}>My Predictions</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your saved match analyses</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t.savedPredictions}</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t.predictions}</Text>
 
           <View style={styles.statsRow}>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="document-text" size={20} color={colors.accent} />
               <Text style={[styles.statNumber, { color: colors.text }]}>{stats?.totalPredictions ?? 0}</Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t.allTime}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="time" size={20} color={colors.blue} />
               <Text style={[styles.statNumber, { color: colors.text }]}>{stats?.recentPredictions ?? 0}</Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>This Week</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t.thisWeek}</Text>
             </View>
           </View>
 

@@ -31,8 +31,8 @@ const AuthContext = createContext<AuthState>({
   logout: () => {},
 });
 
-const STORAGE_KEY = "wc2026_auth_token";
-const USER_KEY = "wc2026_auth_user";
+const STORAGE_KEY = "kicksight_auth_token";
+const USER_KEY = "kicksight_auth_user";
 
 async function saveToStorage(key: string, value: string) {
   if (Platform.OS === "web") {

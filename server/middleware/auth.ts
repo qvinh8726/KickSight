@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "wc2026-betting-ai-dev-secret";
+const JWT_SECRET = process.env.JWT_SECRET || "kicksight-dev-secret";
 if (!process.env.JWT_SECRET) {
   console.warn("[AUTH] WARNING: Using default JWT secret. Set JWT_SECRET env var for production.");
 }

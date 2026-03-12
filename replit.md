@@ -1,6 +1,6 @@
-# WC2026 Betting AI — React Native iOS App
+# KickSight — React Native iOS App
 
-Football betting analysis app for the 2026 FIFA World Cup, built with React Native (Expo) and a Node.js backend.
+AI-powered football match analysis app, built with React Native (Expo) and a Node.js backend. Supports multi-language (English, Vietnamese, Spanish, French, German, Portuguese, Japanese, Korean, Chinese).
 
 ## Architecture
 
@@ -16,7 +16,7 @@ server/                    # Node.js/Express API (port 3001)
   lib/db.ts                # PostgreSQL connection pool
 mobile/                    # Expo React Native app (port 5000 web preview)
   app/
-    _layout.tsx            # Root layout + ThemeProvider + NotificationsProvider + AuthProvider + Google OAuth handler
+    _layout.tsx            # Root layout + I18nProvider + ThemeProvider + NotificationsProvider + AuthProvider + Google OAuth handler
     index.tsx              # Auth redirect (login or tabs)
     notifications.tsx      # Notifications screen (modal)
     (auth)/
@@ -40,6 +40,7 @@ mobile/                    # Expo React Native app (port 5000 web preview)
     auth-context.tsx       # Auth state (JWT + SecureStore)
     theme-context.tsx      # Dark/Light mode theme system
     notifications-context.tsx  # In-app notification system
+    i18n.tsx               # Multi-language system (9 languages: en, vi, es, fr, de, pt, ja, ko, zh)
   metro.config.js          # Proxy /api/* → backend port 3001
 backend/                   # (Legacy) Python FastAPI - not active
 ```
@@ -116,6 +117,13 @@ PostgreSQL (Replit built-in) with tables:
 - Full notification center screen (modal) with mark-as-read, clear all
 - Auto-generates periodic match notifications (every 5 min)
 - Persisted in localStorage (max 50)
+
+### Multi-Language (i18n)
+- I18nProvider wraps entire app via `mobile/lib/i18n.tsx`
+- 9 languages: English, Vietnamese, Spanish, French, German, Portuguese, Japanese, Korean, Chinese
+- Language selector in Profile > Settings with native name + flag display
+- Persisted in localStorage (web) via `kicksight_language` key
+- All UI text uses `useI18n()` hook with `t.*` translation keys
 
 ### Deployment
 - Configured for Replit autoscale deployment
