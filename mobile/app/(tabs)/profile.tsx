@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { useI18n, LANGUAGES } from "@/lib/i18n";
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
   const { colors, isDark, toggle } = useTheme();
   const { t, language, setLanguage } = useI18n();
   const router = useRouter();
+  const appVersion = Constants.expoConfig?.version ?? "2.1.0";
   const [showLangModal, setShowLangModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isPro, setIsPro] = useState(false);
@@ -169,7 +171,7 @@ export default function ProfileScreen() {
 
           <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t.about}</Text>
 
-          <MenuItem icon="information-circle-outline" label={t.version} value="2.0.0" colors={colors} />
+          <MenuItem icon="information-circle-outline" label={t.version} value={appVersion} colors={colors} />
           <MenuItem icon="document-text-outline" label={t.termsOfService} colors={colors} />
           <MenuItem icon="shield-outline" label={t.privacyPolicy} colors={colors} onPress={() => router.push("/privacy-policy")} />
 
