@@ -1,20 +1,9 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { generateToken, verifyAuth, AuthRequest } from "../middleware/auth";
+import { query } from "../lib/db";
 
 const router = Router();
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  passwordHash: string;
-  createdAt: string;
-  avatar?: string;
-  googleId?: string;
-}
-
-const users = new Map<string, User>();
 
 router.post("/register", async (req: Request, res: Response) => {
   try {
@@ -25,26 +14,23 @@ router.post("/register", async (req: Request, res: Response) => {
     if (password.length < 6) {
       return res.status(400).json({ error: "Password must be at least 6 characters" });
     }
-    const existing = Array.from(users.values()).find((u) => u.email === email);
-    if (existing) {
-      return res.status(409).json({ error: "Email already registered" });
-    }
     const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const passwordHash = await bcrypt.hash(password, 10);
-    const user: User = {
-      id,
-      name,
-      email,
-      passwordHash,
-      createdAt: new Date().toISOString(),
-    };
-    users.set(id, user);
-    const token = generateToken({ id, email });
+    const result = await query(
+      "INSERT INTO users (id, name, email, password_hash) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO NOTHING RETURNING id, name, email, created_at",
+      [id, name, email, passwordHash]
+    );
+    if (result.rows.length === 0) {
+      return res.status(409).json({ error: "Email already registered" });
+    }
+    const user = result.rows[0];
+    const token = generateToken({ id: user.id, email: user.email });
     res.status(201).json({
       token,
-      user: { id, name, email, createdAt: user.createdAt },
+      user: { id: user.id, name: user.name, email: user.email, createdAt: user.created_at },
     });
   } catch (err) {
+    console.error("[AUTH] Register error:", err);
     res.status(500).json({ error: "Registration failed" });
   }
 });
@@ -55,20 +41,25 @@ router.post("/login", async (req: Request, res: Response) => {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
-    const user = Array.from(users.values()).find((u) => u.email === email);
-    if (!user) {
+    const result = await query("SELECT id, name, email, password_hash, created_at FROM users WHERE email = $1", [email]);
+    if (result.rows.length === 0) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const user = result.rows[0];
+    if (!user.password_hash) {
+      return res.status(401).json({ error: "This account uses Google Sign-In. Please sign in with Google." });
+    }
+    const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
     const token = generateToken({ id: user.id, email: user.email });
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt },
+      user: { id: user.id, name: user.name, email: user.email, createdAt: user.created_at },
     });
   } catch (err) {
+    console.error("[AUTH] Login error:", err);
     res.status(500).json({ error: "Login failed" });
   }
 });
@@ -104,37 +95,40 @@ router.post("/google", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Google token is required" });
     }
 
-    let user = Array.from(users.values()).find((u) => u.email === email);
-    if (!user) {
-      const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      user = {
-        id,
-        name,
-        email,
-        passwordHash: "",
-        createdAt: new Date().toISOString(),
-        googleId,
-      };
-      users.set(id, user);
-    }
+    const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const result = await query(
+      `INSERT INTO users (id, name, email, google_id) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (email) DO UPDATE SET google_id = COALESCE(users.google_id, $4)
+       RETURNING id, name, email, created_at`,
+      [id, name, email, googleId]
+    );
+    const user = result.rows[0];
+
     const token = generateToken({ id: user.id, email: user.email });
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt },
+      user: { id: user.id, name: user.name, email: user.email, createdAt: user.created_at },
     });
   } catch (err) {
+    console.error("[AUTH] Google auth error:", err);
     res.status(500).json({ error: "Google authentication failed" });
   }
 });
 
-router.get("/me", verifyAuth, (req: AuthRequest, res: Response) => {
-  const user = users.get(req.userId!);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+router.get("/me", verifyAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await query("SELECT id, name, email, created_at FROM users WHERE id = $1", [req.userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const user = result.rows[0];
+    res.json({
+      user: { id: user.id, name: user.name, email: user.email, createdAt: user.created_at },
+    });
+  } catch (err) {
+    console.error("[AUTH] Me error:", err);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
-  res.json({
-    user: { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt },
-  });
 });
 
 export default router;

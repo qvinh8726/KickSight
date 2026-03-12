@@ -8,17 +8,18 @@ Football betting analysis app for the 2026 FIFA World Cup, built with React Nati
 server/                    # Node.js/Express API (port 3001)
   index.ts                 # Express app entry
   data/demo.ts             # Demo WC2026 match/prediction data
-  routes/auth.ts           # JWT auth (register/login/me)
+  routes/auth.ts           # JWT auth (register/login/google/me) with PostgreSQL
   routes/football.ts       # Live football data from TheSportsDB
   middleware/auth.ts        # JWT verification middleware
   lib/analysis.ts          # Poisson AI match analysis engine
+  lib/db.ts                # PostgreSQL connection pool
 mobile/                    # Expo React Native app (port 5000 web preview)
   app/
-    _layout.tsx            # Root layout + AuthProvider + QueryClient
+    _layout.tsx            # Root layout + AuthProvider + Google OAuth handler
     index.tsx              # Auth redirect (login or tabs)
     (auth)/
       _layout.tsx          # Auth stack layout
-      login.tsx            # Login screen (email/password + Google/Apple)
+      login.tsx            # Login screen (email/password + Google Sign-In)
       register.tsx         # Register screen with password strength
     (tabs)/
       _layout.tsx          # Tab navigator (5 tabs)
@@ -38,6 +39,13 @@ mobile/                    # Expo React Native app (port 5000 web preview)
 backend/                   # (Legacy) Python FastAPI - not active
 ```
 
+## Database
+
+PostgreSQL (Replit built-in) with tables:
+- `users` — User accounts (email/password + Google OAuth)
+- `predictions` — Saved match predictions per user
+- `favorites` — User's favorite teams
+
 ## Workflows
 
 | Workflow | Command | Port | Type |
@@ -50,6 +58,7 @@ backend/                   # (Legacy) Python FastAPI - not active
 ### Auth
 - `POST /api/auth/register` — Create account (name, email, password)
 - `POST /api/auth/login` — Login (email, password) → JWT token
+- `POST /api/auth/google` — Google OAuth login (accessToken/idToken)
 - `GET /api/auth/me` — Verify token, get user info
 
 ### WC2026 Predictions
@@ -68,7 +77,7 @@ backend/                   # (Legacy) Python FastAPI - not active
 
 ## Screens
 
-- **Login/Register** — Email+password auth with Google/Apple OAuth buttons
+- **Login/Register** — Email+password auth with Google Sign-In
 - **Dashboard** — Animated stats counters + match prediction cards
 - **Matches** — WC2026 matches with Group Stage / Knockout filters
 - **Value Bets** — AI-detected betting opportunities with Kelly stakes
@@ -79,17 +88,27 @@ backend/                   # (Legacy) Python FastAPI - not active
 
 - **Frontend:** React Native (Expo SDK 51), Expo Router, React Query, Animated API
 - **Backend:** Node.js, Express, TypeScript, JWT (jsonwebtoken), bcryptjs
+- **Database:** PostgreSQL (Replit built-in) via `pg` driver
 - **AI Engine:** Poisson distribution model for goal predictions
 - **Football Data:** TheSportsDB free API
+- **Auth:** JWT + Google OAuth (implicit flow with CSRF state)
 - **Design:** Dark theme (#0B0F1A), green accent (#00E676), Inter font
 
 ## Auth Flow
 
 1. App starts → checks for saved JWT in SecureStore (native) or localStorage (web)
 2. No token → Login screen
-3. Register/Login → JWT saved → redirect to Dashboard
+3. Register/Login/Google → JWT saved → redirect to Dashboard
 4. Protected API routes use `Authorization: Bearer <token>` header
-5. Google/Apple OAuth buttons ready (need credentials configuration)
+5. Google OAuth: redirect to Google → access token → verify on server → create/find user → JWT
+6. Users persisted in PostgreSQL (survives server restarts)
+
+## Environment Variables
+
+- `DATABASE_URL` — PostgreSQL connection string (auto-set by Replit)
+- `GOOGLE_CLIENT_ID` — Google OAuth Client ID
+- `GOOGLE_CLIENT_SECRET` — Google OAuth Client Secret
+- `JWT_SECRET` — JWT signing secret (uses fallback in dev)
 
 ## iOS Testing
 
