@@ -104,6 +104,7 @@ export default function DashboardScreen() {
   const { data: liveData } = useQuery<AllMatchesData>({
     queryKey: ["/api/football/all-matches"],
     queryFn: () => apiRequest<AllMatchesData>("/api/football/all-matches"),
+    refetchInterval: 60 * 1000,
   });
 
   useEffect(() => {

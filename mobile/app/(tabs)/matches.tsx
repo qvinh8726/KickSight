@@ -110,6 +110,7 @@ export default function MatchesScreen() {
   const { data, isLoading, isError, refetch } = useQuery<AllMatchesData>({
     queryKey: ["/api/football/all-matches"],
     queryFn: () => apiRequest<AllMatchesData>("/api/football/all-matches"),
+    refetchInterval: 60 * 1000,
   });
 
   const standingsLeague = selectedLeague === "all" ? "epl" : selectedLeague;
@@ -117,6 +118,7 @@ export default function MatchesScreen() {
     queryKey: ["/api/football/standings", standingsLeague],
     queryFn: () => apiRequest<StandingsData>(`/api/football/standings?league=${standingsLeague}`),
     enabled: viewMode === "Standings",
+    refetchInterval: viewMode === "Standings" ? 2 * 60 * 1000 : false,
   });
 
   const filterByLeague = (matches: LiveMatch[]) => {

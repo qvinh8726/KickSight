@@ -19,7 +19,7 @@ interface CacheEntry {
 }
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_TTL = 10 * 60 * 1000;
+const CACHE_TTL = 2 * 60 * 1000;
 
 async function fetchWithCache(url: string): Promise<any> {
   const cached = cache.get(url);
