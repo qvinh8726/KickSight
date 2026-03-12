@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,98 +6,165 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
+  Animated,
+  RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MatchCard from "@/components/MatchCard";
-import { apiRequest } from "@/lib/query-client";
+import { apiRequest, queryClient } from "@/lib/query-client";
+import { useAuth } from "@/lib/auth-context";
 import type { DashboardData } from "@/lib/types";
+
+function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: string }) {
+  const animVal = useRef(new Animated.Value(0)).current;
+  const [display, setDisplay] = React.useState("0");
+
+  useEffect(() => {
+    animVal.setValue(0);
+    Animated.timing(animVal, { toValue: value, duration: 1200, useNativeDriver: false }).start();
+    const id = animVal.addListener(({ value: v }) => {
+      setDisplay(suffix === "%" ? Math.round(v).toString() : Math.round(v).toString());
+    });
+    return () => animVal.removeListener(id);
+  }, [value]);
+
+  return <Text style={styles.statValue}>{display}{suffix}</Text>;
+}
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const { user } = useAuth();
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  const { data, isLoading, isError } = useQuery<DashboardData>({
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const statsSlide = useRef(new Animated.Value(30)).current;
+  const cardsSlide = useRef(new Animated.Value(50)).current;
+
+  const { data, isLoading, isError, refetch } = useQuery<DashboardData>({
     queryKey: ["/api/dashboard"],
     queryFn: () => apiRequest<DashboardData>("/api/dashboard"),
   });
 
+  useEffect(() => {
+    Animated.stagger(100, [
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.spring(headerSlide, { toValue: 0, tension: 50, friction: 8, useNativeDriver: true }),
+      ]),
+      Animated.spring(statsSlide, { toValue: 0, tension: 50, friction: 8, useNativeDriver: true }),
+      Animated.spring(cardsSlide, { toValue: 0, tension: 40, friction: 8, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
   return (
     <View style={[styles.root, { paddingTop: topPad }]}>
-      <View style={styles.header}>
-        <View style={styles.logoRow}>
+      <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: headerSlide }] }]}>
+        <View style={styles.headerLeft}>
           <View style={styles.logoIcon}>
-            <Text style={styles.logoLetter}>W</Text>
+            <Ionicons name="football" size={20} color="#00E676" />
           </View>
           <View>
-            <Text style={styles.logoTitle}>WC2026 Betting AI</Text>
-            <Text style={styles.logoSub}>Probability-based analysis</Text>
+            <Text style={styles.greeting}>{greeting()}, {user?.name?.split(" ")[0] || "User"}</Text>
+            <Text style={styles.logoSub}>WC2026 Betting AI</Text>
           </View>
         </View>
-      </View>
+        <TouchableOpacity style={styles.notifBtn}>
+          <Ionicons name="notifications-outline" size={20} color="#8892A4" />
+          <View style={styles.notifDot} />
+        </TouchableOpacity>
+      </Animated.View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00E676" />
+        }
       >
-        <Text style={styles.pageTitle}>Dashboard</Text>
-        <Text style={styles.pageSubtitle}>World Cup 2026 match predictions</Text>
-
         {isLoading && (
-          <ActivityIndicator color="#00E676" size="large" style={{ marginTop: 40 }} />
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color="#00E676" size="large" />
+            <Text style={styles.loadingText}>Loading predictions...</Text>
+          </View>
         )}
 
         {isError && (
           <View style={styles.errorBox}>
-            <Ionicons name="wifi-outline" size={28} color="#FF5252" />
-            <Text style={styles.errorText}>Backend offline — showing demo mode</Text>
+            <View style={styles.errorIconCircle}>
+              <Ionicons name="cloud-offline-outline" size={28} color="#FF5252" />
+            </View>
+            <Text style={styles.errorTitle}>Connection Error</Text>
+            <Text style={styles.errorText}>Could not reach the server</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         )}
 
         {data && (
           <>
-            <View style={styles.statsRow}>
-              <StatCard icon="football-outline" label="Matches" value={String(data.stats.upcoming_matches)} />
-              <StatCard icon="flash-outline" label="Value Bets" value={String(data.stats.value_bets)} accent />
-              <StatCard
-                icon="shield-checkmark-outline"
-                label="Confidence"
-                value={`${Math.round(data.stats.avg_confidence * 100)}%`}
-              />
+            <Animated.View style={[styles.statsRow, { opacity: fadeAnim, transform: [{ translateY: statsSlide }] }]}>
+              <View style={styles.statCard}>
+                <View style={[styles.statIconBg, { backgroundColor: "#3B82F615" }]}>
+                  <Ionicons name="football-outline" size={18} color="#3B82F6" />
+                </View>
+                <AnimatedCounter value={data.stats.upcoming_matches} />
+                <Text style={styles.statLabel}>Matches</Text>
+              </View>
+              <View style={[styles.statCard, styles.statCardAccent]}>
+                <View style={[styles.statIconBg, { backgroundColor: "#00E67615" }]}>
+                  <Ionicons name="flash" size={18} color="#00E676" />
+                </View>
+                <AnimatedCounter value={data.stats.value_bets} />
+                <Text style={styles.statLabel}>Value Bets</Text>
+              </View>
+              <View style={styles.statCard}>
+                <View style={[styles.statIconBg, { backgroundColor: "#A78BFA15" }]}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color="#A78BFA" />
+                </View>
+                <AnimatedCounter value={Math.round(data.stats.avg_confidence * 100)} suffix="%" />
+                <Text style={styles.statLabel}>Confidence</Text>
+              </View>
+            </Animated.View>
+
+            <View style={styles.modelBadge}>
+              <Ionicons name="hardware-chip-outline" size={14} color="#00E676" />
+              <Text style={styles.modelText}>{data.stats.model}</Text>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveText}>Live</Text>
             </View>
 
-            <Text style={styles.sectionLabel}>Upcoming Matches</Text>
+            <Text style={styles.sectionLabel}>WC2026 PREDICTIONS</Text>
 
-            {data.matches.map((m) => (
-              <MatchCard key={m.match.id} data={m} />
-            ))}
+            <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: cardsSlide }] }}>
+              {data.matches.map((m, i) => (
+                <MatchCard key={m.match.id} data={m} index={i} />
+              ))}
+            </Animated.View>
           </>
         )}
 
         <View style={{ height: 20 }} />
       </ScrollView>
-    </View>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <View style={[styles.statCard, accent && styles.statCardAccent]}>
-      <Ionicons name={icon} size={16} color={accent ? "#00E676" : "#8892A4"} />
-      <Text style={[styles.statValue, accent && { color: "#00E676" }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -109,48 +176,110 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#1C2540",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   logoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#00E67620",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#00E67615",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#00E67625",
   },
-  logoLetter: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#00E676" },
-  logoTitle: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  logoSub: { fontSize: 10, fontFamily: "Inter_400Regular", color: "#4A5568" },
+  greeting: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
+  logoSub: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#4A5568" },
+  notifBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#131B2E",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#1C2540",
+  },
+  notifDot: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#00E676",
+  },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 20 },
-  pageTitle: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  pageSubtitle: { fontSize: 13, fontFamily: "Inter_400Regular", color: "#4A5568", marginTop: 2, marginBottom: 20 },
-  statsRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
+  loadingBox: { alignItems: "center", marginTop: 60, gap: 12 },
+  loadingText: { fontSize: 13, color: "#4A5568", fontFamily: "Inter_400Regular" },
+  errorBox: { alignItems: "center", marginTop: 60, gap: 8 },
+  errorIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FF525215",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  errorTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
+  errorText: { fontSize: 13, color: "#4A5568", fontFamily: "Inter_400Regular" },
+  retryBtn: {
+    backgroundColor: "#131B2E",
+    borderRadius: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#1C2540",
+  },
+  retryText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#00E676" },
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
   statCard: {
     flex: 1,
     backgroundColor: "#131B2E",
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#1C2540",
   },
-  statCardAccent: { borderColor: "#00E67640" },
-  statValue: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#FFFFFF", marginTop: 6 },
-  statLabel: { fontSize: 10, fontFamily: "Inter_400Regular", color: "#4A5568", marginTop: 2 },
-  sectionLabel: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    color: "#8892A4",
-    letterSpacing: 0.8,
-    marginBottom: 12,
-    textTransform: "uppercase",
-  },
-  errorBox: {
+  statCardAccent: { borderColor: "#00E67630", backgroundColor: "#0D1A14" },
+  statIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 32,
-    gap: 10,
+    justifyContent: "center",
+    marginBottom: 8,
   },
-  errorText: { fontSize: 13, color: "#8892A4", fontFamily: "Inter_400Regular" },
+  statValue: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
+  statLabel: { fontSize: 10, fontFamily: "Inter_400Regular", color: "#4A5568", marginTop: 2 },
+  modelBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#131B2E",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    alignSelf: "flex-start",
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#1C2540",
+  },
+  modelText: { fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#00E676", marginLeft: 4 },
+  liveText: { fontSize: 11, fontFamily: "Inter_500Medium", color: "#00E676" },
+  sectionLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    color: "#4A5568",
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
 });

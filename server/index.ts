@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import { DEMO_MATCHES, BACKTEST_RESULTS } from "./data/demo";
+import authRoutes from "./routes/auth";
+import footballRoutes from "./routes/football";
+import { analyzeMatch } from "./lib/analysis";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -9,7 +12,16 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", version: "1.0.0" });
+  res.json({ status: "ok", version: "2.0.0" });
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/football", footballRoutes);
+
+app.get("/api/analysis/:homeTeam/:awayTeam", (req, res) => {
+  const { homeTeam, awayTeam } = req.params;
+  const result = analyzeMatch(decodeURIComponent(homeTeam), decodeURIComponent(awayTeam));
+  res.json(result);
 });
 
 app.get("/api/dashboard", (_req, res) => {
@@ -27,7 +39,7 @@ app.get("/api/dashboard", (_req, res) => {
       upcoming_matches: DEMO_MATCHES.length,
       value_bets: totalValueBets,
       avg_confidence: avgConfidence,
-      model: "Ensemble v1",
+      model: "Poisson AI v2",
     },
   });
 });
@@ -55,5 +67,5 @@ app.get("/api/backtest", (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`WC2026 Betting API running on port ${PORT}`);
+  console.log(`WC2026 Betting API v2.0 running on port ${PORT}`);
 });
