@@ -99,7 +99,7 @@ export default function LoginScreen() {
     setError("");
     const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const redirectUri = Platform.OS === "web"
-      ? window.location.origin + window.location.pathname
+      ? window.location.origin + "/"
       : `${API_URL}/api/auth/google/callback`;
 
     if (Platform.OS === "web") {
