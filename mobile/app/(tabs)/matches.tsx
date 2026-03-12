@@ -263,19 +263,27 @@ export default function MatchesScreen() {
 
 function MatchRow({ match, colors }: { match: LiveMatch; colors: any }) {
   const isFinished = match.status === "finished";
+  const isLive = match.status === "live";
+  const hasScore = isFinished || isLive;
 
   return (
-    <View style={[styles.matchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[styles.matchRow, { backgroundColor: colors.card, borderColor: isLive ? "#FF5252" : colors.border }]}>
       <View style={styles.matchLeagueTag}>
         <Text style={[styles.matchLeagueText, { color: colors.textMuted }]}>{match.league}</Text>
         {match.round && <Text style={[styles.matchRound, { color: colors.textMuted }]}>R{match.round}</Text>}
+        {isLive && (
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>LIVE</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.matchTeams}>
         <View style={styles.matchTeamRow}>
           <TeamBadge uri={match.home_badge} size={24} />
           <Text style={[styles.matchTeamName, { color: colors.text }]} numberOfLines={1}>{match.home_team}</Text>
-          {isFinished && (
+          {hasScore && (
             <Text style={[styles.matchScore, {
               color: match.home_score! > match.away_score! ? colors.accent : match.home_score! < match.away_score! ? colors.textMuted : colors.text,
               fontFamily: "Inter_700Bold",
@@ -285,7 +293,7 @@ function MatchRow({ match, colors }: { match: LiveMatch; colors: any }) {
         <View style={styles.matchTeamRow}>
           <TeamBadge uri={match.away_badge} size={24} />
           <Text style={[styles.matchTeamName, { color: colors.text }]} numberOfLines={1}>{match.away_team}</Text>
-          {isFinished && (
+          {hasScore && (
             <Text style={[styles.matchScore, {
               color: match.away_score! > match.home_score! ? colors.accent : match.away_score! < match.home_score! ? colors.textMuted : colors.text,
               fontFamily: "Inter_700Bold",
@@ -294,7 +302,7 @@ function MatchRow({ match, colors }: { match: LiveMatch; colors: any }) {
         </View>
       </View>
 
-      {!isFinished && (
+      {!hasScore && (
         <View style={styles.matchTimeBox}>
           <Text style={[styles.matchTime, { color: colors.accent }]}>{fmtTime(match.time)}</Text>
           {match.venue && <Text style={[styles.matchVenue, { color: colors.textMuted }]} numberOfLines={1}>{match.venue}</Text>}
@@ -305,6 +313,14 @@ function MatchRow({ match, colors }: { match: LiveMatch; colors: any }) {
         <View style={styles.matchStatusBox}>
           <View style={[styles.ftBadge, { backgroundColor: colors.textMuted + "20" }]}>
             <Text style={[styles.ftText, { color: colors.textMuted }]}>FT</Text>
+          </View>
+        </View>
+      )}
+
+      {isLive && match.status_detail && (
+        <View style={styles.matchStatusBox}>
+          <View style={[styles.ftBadge, { backgroundColor: "#FF525220" }]}>
+            <Text style={[styles.ftText, { color: "#FF5252" }]}>{match.status_detail}</Text>
           </View>
         </View>
       )}
@@ -407,6 +423,9 @@ const styles = StyleSheet.create({
   matchStatusBox: { marginTop: 8, flexDirection: "row" },
   ftBadge: { borderRadius: 4, paddingHorizontal: 8, paddingVertical: 2 },
   ftText: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  liveBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#FF525220", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#FF5252" },
+  liveText: { fontSize: 9, fontFamily: "Inter_700Bold", color: "#FF5252" },
 
   standingsCard: { borderRadius: 14, borderWidth: 1, overflow: "hidden", marginTop: 8 },
   standingsHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 10, borderBottomWidth: 1 },

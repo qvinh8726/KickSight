@@ -9,7 +9,7 @@ server/                    # Node.js/Express API (port 3001)
   index.ts                 # Express app entry + static file serving for production
   data/demo.ts             # Demo WC2026 match/prediction data
   routes/auth.ts           # JWT auth (register/login/google/me) with PostgreSQL
-  routes/football.ts       # Live football data from TheSportsDB
+  routes/football.ts       # Live football data from ESPN API
   routes/predictions.ts    # User predictions CRUD (GET/POST/DELETE/stats)
   middleware/auth.ts        # JWT verification middleware
   lib/analysis.ts          # Poisson AI match analysis engine
@@ -127,7 +127,7 @@ PostgreSQL (Replit built-in) with tables:
 - **Backend:** Node.js, Express, TypeScript, JWT (jsonwebtoken), bcryptjs
 - **Database:** PostgreSQL (Replit built-in) via `pg` driver
 - **AI Engine:** Poisson distribution model for goal predictions
-- **Football Data:** TheSportsDB free API
+- **Football Data:** ESPN API (free, no key required)
 - **Auth:** JWT + Google OAuth (implicit flow with CSRF state)
 - **Design:** Dark/Light theme system, green accent (#00E676 / #00C853), Inter font
 

@@ -99,24 +99,22 @@ export interface LiveMatch {
   away_score: number | null;
   date: string;
   time: string;
-  venue: string;
+  venue: string | null;
   league: string;
   league_key: string;
-  status: "scheduled" | "finished";
-  round: string;
+  status: "scheduled" | "finished" | "live";
+  round: string | null;
   home_badge: string | null;
   away_badge: string | null;
   thumb: string | null;
   timestamp: string;
+  status_detail?: string | null;
 }
 
 export interface LeagueInfo {
   key: string;
-  id: string;
   name: string;
   country: string;
-  badge: string;
-  season: string;
 }
 
 export interface AllMatchesData {
