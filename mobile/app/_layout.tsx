@@ -13,6 +13,14 @@ import { I18nProvider } from "@/lib/i18n";
 
 SplashScreen.preventAutoHideAsync();
 
+if (Platform.OS === "web" && typeof window !== "undefined") {
+  window.addEventListener("unhandledrejection", (e) => {
+    if (e.reason?.message?.includes("timeout exceeded")) {
+      e.preventDefault();
+    }
+  });
+}
+
 function processGoogleOAuthSync(): boolean {
   if (Platform.OS !== "web") return false;
   try {
@@ -100,7 +108,27 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const timer = setTimeout(() => {
+        if (!fontsLoaded) {
+          SplashScreen.hideAsync();
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded && !fontError) {
+    if (Platform.OS === "web") {
+      return (
+        <View style={gStyles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00E676" />
+        </View>
+      );
+    }
+    return null;
+  }
 
   if (processingGoogle) {
     return <GoogleOAuthProcessor onDone={() => setProcessingGoogle(false)} />;
