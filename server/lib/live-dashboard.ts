@@ -3,12 +3,15 @@ import { analyzeMatch } from "./analysis";
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 
 const LEAGUES: Record<string, { espnSlug: string; name: string }> = {
-  epl: { espnSlug: "eng.1", name: "English Premier League" },
-  laliga: { espnSlug: "esp.1", name: "La Liga" },
-  bundesliga: { espnSlug: "ger.1", name: "Bundesliga" },
-  seriea: { espnSlug: "ita.1", name: "Serie A" },
-  ligue1: { espnSlug: "fra.1", name: "Ligue 1" },
-  ucl: { espnSlug: "uefa.champions", name: "UEFA Champions League" },
+  epl:        { espnSlug: "eng.1",           name: "English Premier League" },
+  laliga:     { espnSlug: "esp.1",           name: "La Liga" },
+  bundesliga: { espnSlug: "ger.1",           name: "Bundesliga" },
+  seriea:     { espnSlug: "ita.1",           name: "Serie A" },
+  ligue1:     { espnSlug: "fra.1",           name: "Ligue 1" },
+  ucl:        { espnSlug: "uefa.champions",  name: "UEFA Champions League" },
+  uel:        { espnSlug: "uefa.europa",     name: "UEFA Europa League" },
+  uecl:       { espnSlug: "uefa.europa.conf",name: "UEFA Conference League" },
+  efl:        { espnSlug: "eng.league_cup",  name: "EFL Cup" },
 };
 
 function formatDate(d: Date): string {

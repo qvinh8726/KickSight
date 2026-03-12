@@ -37,12 +37,13 @@ async def ingest_matches():
     svc = DataIngestionService()
 
     competitions = [
-        (2000, 2026, "FIFA World Cup 2026"),
-        (2001, 2025, "UEFA Champions League"),
-        (2021, 2025, "English Premier League"),
-        (2014, 2025, "La Liga"),
-        (2002, 2025, "Bundesliga"),
-        (2019, 2025, "Serie A"),
+        (2001, 2024, "UEFA Champions League"),
+        (2018, 2024, "UEFA Europa League"),
+        (2021, 2024, "English Premier League"),
+        (2014, 2024, "La Liga"),
+        (2002, 2024, "Bundesliga"),
+        (2019, 2024, "Serie A"),
+        (2015, 2024, "Ligue 1"),
     ]
 
     total = 0
@@ -69,11 +70,13 @@ async def ingest_odds():
     svc = DataIngestionService()
 
     sports = [
-        ("soccer_epl", "EPL"),
-        ("soccer_spain_la_liga", "La Liga"),
-        ("soccer_germany_bundesliga", "Bundesliga"),
-        ("soccer_italy_serie_a", "Serie A"),
-        ("soccer_uefa_champs_league", "UCL"),
+        ("soccer_epl",                 "Premier League"),
+        ("soccer_spain_la_liga",        "La Liga"),
+        ("soccer_germany_bundesliga",   "Bundesliga"),
+        ("soccer_italy_serie_a",        "Serie A"),
+        ("soccer_france_ligue_1",       "Ligue 1"),
+        ("soccer_uefa_champs_league",   "Champions League"),
+        ("soccer_uefa_europa_league",   "Europa League"),
     ]
 
     total = 0
