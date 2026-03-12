@@ -54,12 +54,12 @@ function TeamBadge({ uri, size = 20 }: { uri: string | null; size?: number }) {
   return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: 3 }} resizeMode="contain" />;
 }
 
-function LiveMatchMini({ match, colors }: { match: LiveMatch; colors: any }) {
+function LiveMatchMini({ match, colors, onPress }: { match: LiveMatch; colors: any; onPress?: () => void }) {
   const isFinished = match.status === "finished";
   const isLive = match.status === "live";
   const hasScore = isFinished || isLive;
   return (
-    <View style={[styles.liveCard, { backgroundColor: colors.card, borderColor: isLive ? "#FF5252" : colors.border }]}>
+    <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={[styles.liveCard, { backgroundColor: colors.card, borderColor: isLive ? "#FF5252" : colors.border }]}>
       <View style={styles.liveLeagueRow}>
         <Text style={[styles.liveLeague, { color: colors.textMuted }]} numberOfLines={1}>{match.league}</Text>
         {isLive ? (
@@ -85,7 +85,7 @@ function LiveMatchMini({ match, colors }: { match: LiveMatch; colors: any }) {
         <Text style={[styles.liveTeamName, { color: colors.text }]} numberOfLines={1}>{match.away_team}</Text>
         {hasScore && <Text style={[styles.liveScore, { color: colors.text }]}>{match.away_score}</Text>}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -139,6 +139,32 @@ export default function DashboardScreen() {
     if (h < 12) return "Good morning";
     if (h < 18) return "Good afternoon";
     return "Good evening";
+  };
+
+  const navigateToMatch = (m: LiveMatch) => {
+    const espnId = m.id.includes("_") ? m.id.split("_").slice(1).join("_") : m.id;
+    router.push({
+      pathname: "/match-detail",
+      params: {
+        leagueKey: m.league_key,
+        espnId,
+        homeTeam: m.home_team,
+        awayTeam: m.away_team,
+        homeBadge: m.home_badge || "",
+        awayBadge: m.away_badge || "",
+        homeScore: m.home_score?.toString() || "",
+        awayScore: m.away_score?.toString() || "",
+        date: m.date,
+        time: m.time,
+        venue: m.venue || "",
+        status: m.status,
+        league: m.league,
+        homeForm: m.home_form || "",
+        awayForm: m.away_form || "",
+        homeRecord: m.home_record || "",
+        awayRecord: m.away_record || "",
+      },
+    });
   };
 
   const recentResults = (liveData?.results ?? []).slice(0, 4);
@@ -245,7 +271,7 @@ export default function DashboardScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
               {recentResults.map((m) => (
-                <LiveMatchMini key={m.id} match={m} colors={colors} />
+                <LiveMatchMini key={m.id} match={m} colors={colors} onPress={() => navigateToMatch(m)} />
               ))}
             </ScrollView>
           </Animated.View>
@@ -264,7 +290,7 @@ export default function DashboardScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
               {upcomingLive.map((m) => (
-                <LiveMatchMini key={m.id} match={m} colors={colors} />
+                <LiveMatchMini key={m.id} match={m} colors={colors} onPress={() => navigateToMatch(m)} />
               ))}
             </ScrollView>
           </Animated.View>

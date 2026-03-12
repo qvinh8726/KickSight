@@ -109,6 +109,10 @@ export interface LiveMatch {
   thumb: string | null;
   timestamp: string;
   status_detail?: string | null;
+  home_form?: string | null;
+  away_form?: string | null;
+  home_record?: string | null;
+  away_record?: string | null;
 }
 
 export interface LeagueInfo {

@@ -145,7 +145,7 @@ export default function MatchDetailScreen() {
             <View style={styles.teamCol}>
               <TeamBadge uri={params.homeBadge || null} size={52} />
               <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>{params.homeTeam}</Text>
-              {params.homeRecord && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.homeRecord}</Text>}
+              {(params.homeRecord || (data as any)?.home_record) && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.homeRecord || (data as any)?.home_record}</Text>}
             </View>
 
             <View style={styles.scoreCol}>
@@ -171,7 +171,7 @@ export default function MatchDetailScreen() {
             <View style={styles.teamCol}>
               <TeamBadge uri={params.awayBadge || null} size={52} />
               <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>{params.awayTeam}</Text>
-              {params.awayRecord && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.awayRecord}</Text>}
+              {(params.awayRecord || (data as any)?.away_record) && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.awayRecord || (data as any)?.away_record}</Text>}
             </View>
           </View>
 

@@ -161,10 +161,10 @@ export default function MatchesScreen() {
         venue: m.venue || "",
         status: m.status,
         league: m.league,
-        homeForm: (m as any).home_form || "",
-        awayForm: (m as any).away_form || "",
-        homeRecord: (m as any).home_record || "",
-        awayRecord: (m as any).away_record || "",
+        homeForm: m.home_form || "",
+        awayForm: m.away_form || "",
+        homeRecord: m.home_record || "",
+        awayRecord: m.away_record || "",
       },
     });
   };

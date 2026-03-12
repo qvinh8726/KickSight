@@ -83,6 +83,7 @@ PostgreSQL (Replit built-in) with tables:
 - `GET /api/football/all-matches` — All upcoming & recent results from all leagues with team badges
 - `GET /api/football/live-matches?league=epl` — Upcoming & recent results for a specific league
 - `GET /api/football/standings?league=epl` — League standings/table with form, goals, points
+- `GET /api/football/match-detail/:leagueKey/:espnId` — Match detail: stats, key events, H2H, venue/referee/attendance
 - `GET /api/football/team/:name` — Team info
 
 ### AI Analysis
@@ -92,7 +93,8 @@ PostgreSQL (Replit built-in) with tables:
 
 - **Login/Register** — Email+password auth with Google Sign-In (theme-aware)
 - **Dashboard** — Animated stats + real recent results & upcoming matches + WC2026 predictions
-- **Matches** — Real live matches from 6 leagues with Upcoming/Results/Standings views, team badges, league filter
+- **Match Detail** — Detailed match view with score card, key events timeline, stat bars, venue/referee/attendance info, head-to-head history (via ESPN summary API)
+- **Matches** — Real live matches from 6 leagues with Upcoming/Results/Standings views, team badges, league filter, tappable rows to match detail
 - **Value Bets** — AI-detected betting opportunities with Kelly stakes
 - **History** — Saved predictions list with stats, delete support
 - **Notifications** — In-app notification center (match alerts, results, value bets, system)

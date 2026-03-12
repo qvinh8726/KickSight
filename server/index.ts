@@ -71,7 +71,10 @@ app.get("/api/backtest", (_req, res) => {
 
 const webDistPath = path.join(__dirname, "..", "mobile", "dist");
 app.use(express.static(webDistPath));
-app.get("*", (_req, res) => {
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "API endpoint not found" });
+  }
   res.sendFile(path.join(webDistPath, "index.html"));
 });
 
