@@ -139,17 +139,10 @@ export default function LoginScreen() {
             <View style={styles.socialRow}>
               <TouchableOpacity
                 style={styles.socialBtn}
-                onPress={() => Alert.alert("Google Sign-In", "Configure your Google OAuth credentials to enable this feature.")}
+                onPress={() => Alert.alert("Google Sign-In", "Configure your Google OAuth Client ID to enable this feature.")}
               >
                 <Ionicons name="logo-google" size={20} color="#FFFFFF" />
-                <Text style={styles.socialBtnText}>Google</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.socialBtn}
-                onPress={() => Alert.alert("Apple Sign-In", "Configure your Apple Developer credentials to enable this feature.")}
-              >
-                <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-                <Text style={styles.socialBtnText}>Apple</Text>
+                <Text style={styles.socialBtnText}>Sign in with Google</Text>
               </TouchableOpacity>
             </View>
 
