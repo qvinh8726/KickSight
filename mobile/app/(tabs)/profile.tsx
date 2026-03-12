@@ -22,7 +22,7 @@ import { apiRequest } from "@/lib/query-client";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? 0 : insets.top;
   const { user, logout } = useAuth();
   const { colors, isDark, toggle } = useTheme();
   const { t, language, setLanguage } = useI18n();

@@ -22,6 +22,9 @@ export default function TabLayout() {
 
   if (!isAuthenticated) return null;
 
+  const TAB_H = Platform.OS === "web" ? 64 : Platform.OS === "ios" ? 82 : 68;
+  const PAD_B = Platform.OS === "web" ? 8 : Platform.OS === "ios" ? 24 : 10;
+
   return (
     <Tabs
       screenOptions={{
@@ -30,48 +33,55 @@ export default function TabLayout() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBorder,
           borderTopWidth: 1,
-          height: Platform.OS === "web" ? 84 : 80,
-          paddingBottom: Platform.OS === "web" ? 34 : 20,
-          paddingTop: 10,
+          height: TAB_H,
+          paddingBottom: PAD_B,
+          paddingTop: 8,
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: 10, fontFamily: "Inter_500Medium", marginTop: 2 },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontFamily: "Inter_500Medium",
+          marginTop: 1,
+          letterSpacing: 0.2,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: t.dashboard,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={"grid-outline" as IoniconsName} size={size} color={color} />
+          title: "Home",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "home" : "home-outline"} size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="matches"
         options={{
-          title: t.matches,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={"football-outline" as IoniconsName} size={size} color={color} />
+          title: "Matches",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "football" : "football-outline"} size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="value-bets"
         options={{
-          title: t.bettingPicks,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="target" size={size} color={color} />
+          title: "Picks",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name={focused ? "lightning-bolt" : "lightning-bolt-outline"} size={24} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: t.history,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={"time-outline" as IoniconsName} size={size} color={color} />
+          title: "History",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "time" : "time-outline"} size={22} color={color} />
           ),
         }}
       />
@@ -84,9 +94,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: t.profile,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={"person-outline" as IoniconsName} size={size} color={color} />
+          title: "Profile",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={22} color={color} />
           ),
         }}
       />

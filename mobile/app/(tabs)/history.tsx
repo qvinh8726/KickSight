@@ -54,7 +54,7 @@ const outcomeLabel = (outcome: string | null) => {
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? 0 : insets.top;
   const [refreshing, setRefreshing] = useState(false);
   const qc = useQueryClient();
   const { colors } = useTheme();
@@ -132,8 +132,8 @@ export default function HistoryScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          <Text style={[styles.title, { color: colors.text }]}>{t.savedPredictions}</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t.predictions}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>History</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your saved predictions</Text>
 
           <View style={styles.statsRow}>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -142,7 +142,7 @@ export default function HistoryScreen() {
               <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t.allTime}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Ionicons name="time" size={20} color={colors.blue} />
+              <Ionicons name="time" size={20} color={colors.accent} />
               <Text style={[styles.statNumber, { color: colors.text }]}>{stats?.recentPredictions ?? 0}</Text>
               <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t.thisWeek}</Text>
             </View>
@@ -200,9 +200,9 @@ export default function HistoryScreen() {
                   </View>
                 )}
                 {p.confidence && (
-                  <View style={[styles.confidenceBadge, { backgroundColor: colors.blueBg }]}>
-                    <Ionicons name="analytics" size={12} color={colors.blue} />
-                    <Text style={[styles.confidenceText, { color: colors.blue }]}>{p.confidence}%</Text>
+                  <View style={[styles.confidenceBadge, { backgroundColor: colors.accentBg }]}>
+                    <Ionicons name="analytics" size={12} color={colors.accent} />
+                    <Text style={[styles.confidenceText, { color: colors.accent }]}>{p.confidence}%</Text>
                   </View>
                 )}
               </View>
@@ -225,7 +225,7 @@ export default function HistoryScreen() {
               )}
 
               {p.notes && <Text style={[styles.notes, { color: colors.textSecondary }]}>{p.notes}</Text>}
-              <Text style={[styles.dateText, { color: colors.probDraw }]}>{fmtDate(p.created_at)}</Text>
+              <Text style={[styles.dateText, { color: colors.textMuted }]}>{fmtDate(p.created_at)}</Text>
             </View>
           ))}
 
@@ -238,12 +238,12 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
-  title: { fontSize: 26, fontFamily: "Inter_700Bold" },
-  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 4, marginBottom: 20 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 20 },
+  title: { fontSize: 24, fontFamily: "Inter_700Bold" },
+  subtitle: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 3, marginBottom: 20 },
   statsRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
-  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: "center", gap: 6, borderWidth: 1 },
-  statNumber: { fontSize: 28, fontFamily: "Inter_700Bold" },
+  statCard: { flex: 1, borderRadius: 12, padding: 14, alignItems: "center", gap: 4, borderWidth: 1 },
+  statNumber: { fontSize: 26, fontFamily: "Inter_700Bold" },
   statLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
   center: { paddingVertical: 60, alignItems: "center" },
   emptyState: { alignItems: "center", paddingVertical: 60, gap: 12 },
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
   retryBtn: { borderRadius: 10, paddingHorizontal: 20, paddingVertical: 8, marginTop: 8 },
   retryText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  predictionCard: { borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1 },
+  predictionCard: { borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   teamsRow: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
   teamName: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   predictionInfo: { flexDirection: "row", gap: 8, marginTop: 12 },
   outcomeBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   outcomeText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  confidenceBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  confidenceBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: undefined },
   confidenceText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   probRow: { flexDirection: "row", gap: 12, marginTop: 12, borderRadius: 10, padding: 10 },
   probItem: { flex: 1, alignItems: "center" },

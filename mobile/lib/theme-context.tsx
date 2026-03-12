@@ -6,59 +6,80 @@ type ThemeMode = "dark" | "light";
 const THEME_KEY = "kicksight_theme";
 
 const darkColors = {
-  bg: "#0B0F1A",
-  card: "#131B2E",
-  cardAccent: "#0D1A14",
-  border: "#1C2540",
-  borderAccent: "#00E67630",
-  text: "#FFFFFF",
-  textSecondary: "#8892A4",
-  textMuted: "#4A5568",
-  accent: "#00E676",
-  accentBg: "#00E67615",
-  accentBorder: "#00E67625",
-  danger: "#FF5252",
-  dangerBg: "#FF525215",
-  dangerBorder: "#FF525230",
-  blue: "#3B82F6",
-  blueBg: "#3B82F615",
-  purple: "#A78BFA",
-  purpleBg: "#A78BFA15",
-  yellow: "#FFD93D",
-  orange: "#FFB74D",
-  tabBar: "#0F1521",
-  tabBorder: "#1C2540",
-  overlay: "#0B0F1A80",
-  inputBg: "#131B2E",
-  probDraw: "#2D3748",
+  // ── Backgrounds ──────────────────────────────────────────────
+  bg:           "#0F1015",   // main bg — near-black with blue tint
+  card:         "#181C25",   // card / list surface
+  cardHigh:     "#1E2333",   // elevated cards
+  cardAccent:   "#152030",   // accent-tinted card
+  // ── Borders / Separators ─────────────────────────────────────
+  border:       "#232A3E",   // standard border
+  borderLight:  "#1A2130",   // subtle dividers
+  tabBorder:    "#1A1E2A",
+  // ── Text ─────────────────────────────────────────────────────
+  text:         "#DDE6F8",   // primary text
+  textSecondary:"#7D8BA8",   // secondary
+  textMuted:    "#3D4A66",   // muted / placeholder
+  // ── Accent (Sofascore blue) ───────────────────────────────────
+  accent:       "#0B7FFF",
+  accentBg:     "#0B7FFF1A",
+  accentBorder: "#0B7FFF30",
+  // ── Status colors ────────────────────────────────────────────
+  danger:       "#E63946",   // loss / error
+  dangerBg:     "#E6394615",
+  dangerBorder: "#E6394630",
+  live:         "#E63946",   // live indicator
+  liveBg:       "#E6394615",
+  win:          "#2DC653",   // win / success
+  winBg:        "#2DC65315",
+  winBorder:    "#2DC65330",
+  draw:         "#636B82",
+  yellow:       "#F0BF26",
+  orange:       "#F07B26",
+  blue:         "#0B7FFF",
+  blueBg:       "#0B7FFF15",
+  purple:       "#9C6FFF",
+  purpleBg:     "#9C6FFF15",
+  // ── Tab bar ──────────────────────────────────────────────────
+  tabBar:       "#0A0C13",
+  // ── Misc ─────────────────────────────────────────────────────
+  overlay:      "#0F101580",
+  inputBg:      "#181C25",
+  probDraw:     "#232A3E",
 };
 
 const lightColors = {
-  bg: "#F5F7FA",
-  card: "#FFFFFF",
-  cardAccent: "#F0FFF4",
-  border: "#E2E8F0",
-  borderAccent: "#00E67640",
-  text: "#1A202C",
-  textSecondary: "#4A5568",
-  textMuted: "#718096",
-  accent: "#00C853",
-  accentBg: "#00C85315",
-  accentBorder: "#00C85325",
-  danger: "#E53E3E",
-  dangerBg: "#FED7D7",
-  dangerBorder: "#FEB2B2",
-  blue: "#3182CE",
-  blueBg: "#EBF8FF",
-  purple: "#805AD5",
-  purpleBg: "#FAF5FF",
-  yellow: "#D69E2E",
-  orange: "#DD6B20",
-  tabBar: "#FFFFFF",
-  tabBorder: "#E2E8F0",
-  overlay: "#F5F7FA80",
-  inputBg: "#EDF2F7",
-  probDraw: "#CBD5E0",
+  bg:           "#F0F4FA",
+  card:         "#FFFFFF",
+  cardHigh:     "#F8FAFF",
+  cardAccent:   "#EBF3FF",
+  border:       "#D5DCE8",
+  borderLight:  "#E4EAF4",
+  tabBorder:    "#D5DCE8",
+  text:         "#1A2035",
+  textSecondary:"#4E5B78",
+  textMuted:    "#8596B0",
+  accent:       "#0B7FFF",
+  accentBg:     "#0B7FFF15",
+  accentBorder: "#0B7FFF30",
+  danger:       "#DC2626",
+  dangerBg:     "#FEE2E2",
+  dangerBorder: "#FECACA",
+  live:         "#DC2626",
+  liveBg:       "#FEE2E2",
+  win:          "#16A34A",
+  winBg:        "#DCFCE7",
+  winBorder:    "#BBF7D0",
+  draw:         "#64748B",
+  yellow:       "#CA8A04",
+  orange:       "#EA580C",
+  blue:         "#0B7FFF",
+  blueBg:       "#EBF3FF",
+  purple:       "#7C3AED",
+  purpleBg:     "#EDE9FE",
+  tabBar:       "#FFFFFF",
+  overlay:      "#F0F4FA80",
+  inputBg:      "#EEF2F8",
+  probDraw:     "#D5DCE8",
 };
 
 export type ThemeColors = typeof darkColors;
