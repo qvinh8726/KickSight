@@ -84,7 +84,12 @@ async def run_odds():
             log.info(f"  {name}: {count} odds records")
             total += count
         except Exception as e:
-            log.error(f"  {name}: FAILED — {e}")
+            err_str = str(e)
+            # 404 = sport không active (mùa nghỉ / không có trận sắp tới) — bỏ qua
+            if "404" in err_str or "Not Found" in err_str:
+                log.info(f"  {name}: no upcoming matches (404 — skipped)")
+            else:
+                log.error(f"  {name}: FAILED — {e}")
 
     log.info(f"Odds done: {total} total records")
     return total
