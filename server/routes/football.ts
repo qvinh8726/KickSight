@@ -41,7 +41,7 @@ function formatEvent(e: any, leagueName: string, leagueKey: string, status: stri
   const homeScore = e.intHomeScore !== null && e.intHomeScore !== "" ? parseInt(e.intHomeScore) : null;
   const awayScore = e.intAwayScore !== null && e.intAwayScore !== "" ? parseInt(e.intAwayScore) : null;
   return {
-    id: e.idEvent,
+    id: `${leagueKey}_${e.idEvent}`,
     home_team: e.strHomeTeam,
     away_team: e.strAwayTeam,
     home_score: homeScore,
