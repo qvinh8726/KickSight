@@ -42,7 +42,7 @@ export default function RegisterScreen() {
   const getStrengthLabel = () => {
     if (password.length === 0) return "";
     if (password.length < 4) return t.weak;
-    if (password.length < 6) return t.fair;
+    if (password.length < 6) return t.passwordFair;
     if (password.length < 8) return t.good;
     return t.strong;
   };

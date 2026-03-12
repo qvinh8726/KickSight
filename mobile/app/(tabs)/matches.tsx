@@ -30,19 +30,19 @@ const LEAGUE_TABS = [
   { key: "ucl", label: "UCL" },
 ];
 
-const VIEW_MODES = ["Upcoming", "Results", "Standings"] as const;
+const VIEW_MODES = ["upcoming", "results", "standings"] as const;
 
-function fmtDate(d: string) {
+function fmtDate(d: string, t?: any) {
   const dt = new Date(d);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const todayDt = new Date();
+  const tomorrowDt = new Date(todayDt);
+  tomorrowDt.setDate(tomorrowDt.getDate() + 1);
+  const yesterdayDt = new Date(todayDt);
+  yesterdayDt.setDate(yesterdayDt.getDate() - 1);
 
-  if (dt.toDateString() === today.toDateString()) return "Today";
-  if (dt.toDateString() === tomorrow.toDateString()) return "Tomorrow";
-  if (dt.toDateString() === yesterday.toDateString()) return "Yesterday";
+  if (dt.toDateString() === todayDt.toDateString()) return t?.today || "Today";
+  if (dt.toDateString() === tomorrowDt.toDateString()) return t?.tomorrow || "Tomorrow";
+  if (dt.toDateString() === yesterdayDt.toDateString()) return t?.yesterday || "Yesterday";
   return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
@@ -57,7 +57,7 @@ function fmtTime(t: string) {
   return `${h12}:${m} ${ampm}`;
 }
 
-function groupByDate(matches: LiveMatch[]) {
+function groupByDate(matches: LiveMatch[], t?: any) {
   const groups: { date: string; label: string; matches: LiveMatch[] }[] = [];
   const map = new Map<string, LiveMatch[]>();
   for (const m of matches) {
@@ -66,7 +66,7 @@ function groupByDate(matches: LiveMatch[]) {
     map.get(d)!.push(m);
   }
   for (const [date, ms] of map) {
-    groups.push({ date, label: fmtDate(date), matches: ms });
+    groups.push({ date, label: fmtDate(date, t), matches: ms });
   }
   return groups;
 }
@@ -99,7 +99,7 @@ export default function MatchesScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [selectedLeague, setSelectedLeague] = useState("all");
-  const [viewMode, setViewMode] = useState<typeof VIEW_MODES[number]>("Upcoming");
+  const [viewMode, setViewMode] = useState<typeof VIEW_MODES[number]>("upcoming");
   const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -121,8 +121,8 @@ export default function MatchesScreen() {
   const { data: standingsData, isLoading: standingsLoading } = useQuery<StandingsData>({
     queryKey: ["/api/football/standings", standingsLeague],
     queryFn: () => apiRequest<StandingsData>(`/api/football/standings?league=${standingsLeague}`),
-    enabled: viewMode === "Standings",
-    refetchInterval: viewMode === "Standings" ? 2 * 60 * 1000 : false,
+    enabled: viewMode === "standings",
+    refetchInterval: viewMode === "standings" ? 2 * 60 * 1000 : false,
   });
 
   const filterByLeague = (matches: LiveMatch[]) => {
@@ -132,13 +132,13 @@ export default function MatchesScreen() {
 
   const upcoming = filterByLeague(data?.upcoming ?? []);
   const results = filterByLeague(data?.results ?? []);
-  const upcomingGroups = groupByDate(upcoming);
-  const resultsGroups = groupByDate(results);
+  const upcomingGroups = groupByDate(upcoming, t);
+  const resultsGroups = groupByDate(results, t);
 
   const onRefresh = async () => {
     setRefreshing(true);
     const promises: Promise<any>[] = [refetch()];
-    if (viewMode === "Standings") {
+    if (viewMode === "standings") {
       promises.push(queryClient.invalidateQueries({ queryKey: ["/api/football/standings", standingsLeague] }));
     }
     await Promise.all(promises);
@@ -171,7 +171,9 @@ export default function MatchesScreen() {
     });
   };
 
-  const totalMatches = viewMode === "Upcoming" ? upcoming.length : viewMode === "Results" ? results.length : (standingsData?.standings?.length ?? 0);
+  const totalMatches = viewMode === "upcoming" ? upcoming.length : viewMode === "results" ? results.length : (standingsData?.standings?.length ?? 0);
+
+  const viewModeLabels: Record<string, string> = { upcoming: t.upcoming, results: t.results, standings: t.standings };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: topPad }]}>
@@ -181,7 +183,7 @@ export default function MatchesScreen() {
           <Text style={[styles.title, { color: colors.text }]}>{t.matches}</Text>
         </View>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          {totalMatches} {viewMode === "Standings" ? "teams" : "matches"}
+          {totalMatches} {viewMode === "standings" ? t.standings.toLowerCase() : t.matches.toLowerCase()}
         </Text>
       </Animated.View>
 
@@ -193,7 +195,7 @@ export default function MatchesScreen() {
             onPress={() => setViewMode(mode)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.viewModeText, { color: viewMode === mode ? colors.accent : colors.textMuted }]}>{mode}</Text>
+            <Text style={[styles.viewModeText, { color: viewMode === mode ? colors.accent : colors.textMuted }]}>{viewModeLabels[mode]}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -239,15 +241,15 @@ export default function MatchesScreen() {
         {isError && (
           <View style={styles.loadingBox}>
             <Ionicons name="cloud-offline-outline" size={28} color="#FF5252" />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Could not load matches</Text>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t.noMatches}</Text>
           </View>
         )}
 
-        {viewMode === "Upcoming" && upcomingGroups.map((group) => (
+        {viewMode === "upcoming" && upcomingGroups.map((group) => (
           <View key={group.date}>
             <View style={[styles.dateHeader, { backgroundColor: colors.card + "80" }]}>
               <Text style={[styles.dateHeaderText, { color: colors.textSecondary }]}>{group.label}</Text>
-              <Text style={[styles.dateHeaderCount, { color: colors.textMuted }]}>{group.matches.length} matches</Text>
+              <Text style={[styles.dateHeaderCount, { color: colors.textMuted }]}>{group.matches.length}</Text>
             </View>
             {group.matches.map((m) => (
               <MatchRow key={m.id} match={m} colors={colors} onPress={() => navigateToMatch(m)} />
@@ -255,7 +257,7 @@ export default function MatchesScreen() {
           </View>
         ))}
 
-        {viewMode === "Results" && resultsGroups.map((group) => (
+        {viewMode === "results" && resultsGroups.map((group) => (
           <View key={group.date}>
             <View style={[styles.dateHeader, { backgroundColor: colors.card + "80" }]}>
               <Text style={[styles.dateHeaderText, { color: colors.textSecondary }]}>{group.label}</Text>
@@ -266,21 +268,21 @@ export default function MatchesScreen() {
           </View>
         ))}
 
-        {viewMode === "Standings" && (
+        {viewMode === "standings" && (
           standingsLoading ? (
             <View style={styles.loadingBox}>
               <ActivityIndicator color={colors.accent} size="large" />
             </View>
           ) : (
-            <StandingsTable standings={standingsData?.standings ?? []} colors={colors} />
+            <StandingsTable standings={standingsData?.standings ?? []} colors={colors} t={t} />
           )
         )}
 
-        {!isLoading && !isError && viewMode !== "Standings" && (
-          (viewMode === "Upcoming" ? upcoming : results).length === 0 && (
+        {!isLoading && !isError && viewMode !== "standings" && (
+          (viewMode === "upcoming" ? upcoming : results).length === 0 && (
             <View style={styles.emptyBox}>
               <Ionicons name="calendar-outline" size={32} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No {viewMode.toLowerCase()} matches found</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t.noMatches}</Text>
             </View>
           )
         )}
@@ -358,12 +360,12 @@ function MatchRow({ match, colors, onPress }: { match: LiveMatch; colors: any; o
   );
 }
 
-function StandingsTable({ standings, colors }: { standings: StandingEntry[]; colors: any }) {
+function StandingsTable({ standings, colors, t }: { standings: StandingEntry[]; colors: any; t: any }) {
   if (standings.length === 0) {
     return (
       <View style={styles.emptyBox}>
         <Ionicons name="podium-outline" size={32} color={colors.textMuted} />
-        <Text style={[styles.emptyText, { color: colors.textMuted }]}>No standings available</Text>
+        <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t.noMatches}</Text>
       </View>
     );
   }
@@ -372,7 +374,7 @@ function StandingsTable({ standings, colors }: { standings: StandingEntry[]; col
     <View style={[styles.standingsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={[styles.standingsHeader, { borderBottomColor: colors.border }]}>
         <Text style={[styles.sthRank, { color: colors.textMuted }]}>#</Text>
-        <Text style={[styles.sthTeam, { color: colors.textMuted }]}>Team</Text>
+        <Text style={[styles.sthTeam, { color: colors.textMuted }]}>{t.standings}</Text>
         <Text style={[styles.sthStat, { color: colors.textMuted }]}>P</Text>
         <Text style={[styles.sthStat, { color: colors.textMuted }]}>W</Text>
         <Text style={[styles.sthStat, { color: colors.textMuted }]}>D</Text>

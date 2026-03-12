@@ -60,9 +60,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="value-bets"
         options={{
-          title: t.valueBets,
+          title: t.bettingPicks,
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="lightning-bolt" size={size} color={color} />
+            <MaterialCommunityIcons name="target" size={size} color={color} />
           ),
         }}
       />

@@ -27,10 +27,10 @@ mobile/                    # Expo React Native app (port 5000 web preview)
       _layout.tsx          # Tab navigator (5 visible tabs) with theme support
       index.tsx            # Dashboard with animated counters + notification badge
       matches.tsx          # WC2026 matches with filters
-      value-bets.tsx       # AI-detected value bets
+      value-bets.tsx       # Betting Picks (AI handicap + O/U picks with stats)
       history.tsx          # Saved predictions with stats
       backtest.tsx         # Historical performance metrics (hidden from tab bar)
-      profile.tsx          # User profile + dark/light toggle + settings + logout
+      profile.tsx          # User profile + Free/Pro plan + upgrade modal + dark/light toggle + settings
   components/
     MatchCard.tsx          # Animated match card with odds + save button
     ProbabilityBar.tsx     # 1X2 probability bar
@@ -89,18 +89,20 @@ PostgreSQL (Replit built-in) with tables:
 
 ### AI Analysis
 - `GET /api/analysis/:homeTeam/:awayTeam` — Poisson-based match prediction
+- `GET /api/football/ai-analysis/:leagueKey/:espnId` — Per-match AI analysis (probabilities, projected score, picks, key factors)
+- `GET /api/football/betting-picks` — Upcoming match betting picks with Asian Handicap + O/U stats
 
 ## Screens
 
 - **Login/Register** — Email+password auth with Google Sign-In (theme-aware)
 - **Dashboard** — Animated stats + real recent results & upcoming matches + WC2026 predictions
-- **Match Detail** — Detailed match view with score card, key events timeline, stat bars, venue/referee/attendance info, head-to-head history (via ESPN summary API)
-- **Matches** — Real live matches from 6 leagues with Upcoming/Results/Standings views, team badges, league filter, tappable rows to match detail
-- **Value Bets** — AI-detected betting opportunities with Kelly stakes
+- **Match Detail** — Detailed match view with score card, key events, stat bars, venue/referee/attendance, H2H, AI Analysis modal (probabilities, projected score, picks, key factors)
+- **Matches** — Real live matches from 6 leagues with Upcoming/Results/Standings views, team badges, league filter, i18n view mode labels
+- **Betting Picks** — AI handicap + O/U picks for upcoming matches with tri-color probability bars, win rate/profit/ROI/streak stats
 - **History** — Saved predictions list with stats, delete support
 - **Notifications** — In-app notification center (match alerts, results, value bets, system)
 - **Backtest** — Monthly ROI chart + Sharpe ratio + performance metrics (hidden from tab bar)
-- **Profile** — User info, dark/light mode toggle, settings, sign out
+- **Profile** — User info, Free/Pro plan badge, upgrade modal (plan comparison + subscribe), dark/light mode toggle, language selector, settings
 
 ## Features
 
@@ -124,6 +126,13 @@ PostgreSQL (Replit built-in) with tables:
 - Language selector in Profile > Settings with native name + flag display
 - Persisted in localStorage (web) via `kicksight_language` key
 - All UI text uses `useI18n()` hook with `t.*` translation keys
+
+### Free/Pro Plan System
+- Free plan: Basic AI analysis, limited betting picks
+- Pro plan ($9.99/month): Full AI analysis, detailed betting picks, recommended bets
+- Plan badge shown in Profile screen (diamond icon)
+- Upgrade modal with plan comparison (Free vs Pro features)
+- Plan stored in localStorage via `kicksight_plan` key
 
 ### Deployment
 - Configured for Replit autoscale deployment
