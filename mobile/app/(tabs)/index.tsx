@@ -13,12 +13,15 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import MatchCard from "@/components/MatchCard";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
+import { useNotifications } from "@/lib/notifications-context";
 import type { DashboardData } from "@/lib/types";
 
-function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: string }) {
+function AnimatedCounter({ value, suffix = "", color }: { value: number; suffix?: string; color?: string }) {
   const animVal = useRef(new Animated.Value(0)).current;
   const [display, setDisplay] = React.useState("0");
 
@@ -26,18 +29,21 @@ function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: strin
     animVal.setValue(0);
     Animated.timing(animVal, { toValue: value, duration: 1200, useNativeDriver: false }).start();
     const id = animVal.addListener(({ value: v }) => {
-      setDisplay(suffix === "%" ? Math.round(v).toString() : Math.round(v).toString());
+      setDisplay(Math.round(v).toString());
     });
     return () => animVal.removeListener(id);
   }, [value]);
 
-  return <Text style={styles.statValue}>{display}{suffix}</Text>;
+  return <Text style={[styles.statValue, color ? { color } : undefined]}>{display}{suffix}</Text>;
 }
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
+  const { unreadCount } = useNotifications();
+  const router = useRouter();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -75,20 +81,27 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: topPad }]}>
-      <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: headerSlide }] }]}>
+    <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: topPad }]}>
+      <Animated.View style={[styles.header, { borderBottomColor: colors.border, opacity: fadeAnim, transform: [{ translateY: headerSlide }] }]}>
         <View style={styles.headerLeft}>
-          <View style={styles.logoIcon}>
-            <Ionicons name="football" size={20} color="#00E676" />
+          <View style={[styles.logoIcon, { backgroundColor: colors.accentBg, borderColor: colors.accentBorder }]}>
+            <Ionicons name="football" size={20} color={colors.accent} />
           </View>
           <View>
-            <Text style={styles.greeting}>{greeting()}, {user?.name?.split(" ")[0] || "User"}</Text>
-            <Text style={styles.logoSub}>WC2026 Betting AI</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>{greeting()}, {user?.name?.split(" ")[0] || "User"}</Text>
+            <Text style={[styles.logoSub, { color: colors.textMuted }]}>WC2026 Betting AI</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.notifBtn}>
-          <Ionicons name="notifications-outline" size={20} color="#8892A4" />
-          <View style={styles.notifDot} />
+        <TouchableOpacity
+          style={[styles.notifBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => router.push("/notifications")}
+        >
+          <Ionicons name="notifications-outline" size={20} color={colors.textSecondary} />
+          {unreadCount > 0 && (
+            <View style={[styles.notifDot, { backgroundColor: colors.accent }]}>
+              {unreadCount < 10 && <Text style={styles.notifCount}>{unreadCount}</Text>}
+            </View>
+          )}
         </TouchableOpacity>
       </Animated.View>
 
@@ -97,25 +110,25 @@ export default function DashboardScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00E676" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
         }
       >
         {isLoading && (
           <View style={styles.loadingBox}>
-            <ActivityIndicator color="#00E676" size="large" />
-            <Text style={styles.loadingText}>Loading predictions...</Text>
+            <ActivityIndicator color={colors.accent} size="large" />
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading predictions...</Text>
           </View>
         )}
 
         {isError && (
           <View style={styles.errorBox}>
-            <View style={styles.errorIconCircle}>
-              <Ionicons name="cloud-offline-outline" size={28} color="#FF5252" />
+            <View style={[styles.errorIconCircle, { backgroundColor: colors.dangerBg }]}>
+              <Ionicons name="cloud-offline-outline" size={28} color={colors.danger} />
             </View>
-            <Text style={styles.errorTitle}>Connection Error</Text>
-            <Text style={styles.errorText}>Could not reach the server</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
-              <Text style={styles.retryText}>Retry</Text>
+            <Text style={[styles.errorTitle, { color: colors.text }]}>Connection Error</Text>
+            <Text style={[styles.errorText, { color: colors.textMuted }]}>Could not reach the server</Text>
+            <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => refetch()}>
+              <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -123,37 +136,37 @@ export default function DashboardScreen() {
         {data && (
           <>
             <Animated.View style={[styles.statsRow, { opacity: fadeAnim, transform: [{ translateY: statsSlide }] }]}>
-              <View style={styles.statCard}>
-                <View style={[styles.statIconBg, { backgroundColor: "#3B82F615" }]}>
-                  <Ionicons name="football-outline" size={18} color="#3B82F6" />
+              <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.statIconBg, { backgroundColor: colors.blueBg }]}>
+                  <Ionicons name="football-outline" size={18} color={colors.blue} />
                 </View>
-                <AnimatedCounter value={data.stats.upcoming_matches} />
-                <Text style={styles.statLabel}>Matches</Text>
+                <AnimatedCounter value={data.stats.upcoming_matches} color={colors.text} />
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Matches</Text>
               </View>
-              <View style={[styles.statCard, styles.statCardAccent]}>
-                <View style={[styles.statIconBg, { backgroundColor: "#00E67615" }]}>
-                  <Ionicons name="flash" size={18} color="#00E676" />
+              <View style={[styles.statCard, { backgroundColor: colors.cardAccent, borderColor: colors.borderAccent }]}>
+                <View style={[styles.statIconBg, { backgroundColor: colors.accentBg }]}>
+                  <Ionicons name="flash" size={18} color={colors.accent} />
                 </View>
-                <AnimatedCounter value={data.stats.value_bets} />
-                <Text style={styles.statLabel}>Value Bets</Text>
+                <AnimatedCounter value={data.stats.value_bets} color={colors.text} />
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Value Bets</Text>
               </View>
-              <View style={styles.statCard}>
-                <View style={[styles.statIconBg, { backgroundColor: "#A78BFA15" }]}>
-                  <Ionicons name="shield-checkmark-outline" size={18} color="#A78BFA" />
+              <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.statIconBg, { backgroundColor: colors.purpleBg }]}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color={colors.purple} />
                 </View>
-                <AnimatedCounter value={Math.round(data.stats.avg_confidence * 100)} suffix="%" />
-                <Text style={styles.statLabel}>Confidence</Text>
+                <AnimatedCounter value={Math.round(data.stats.avg_confidence * 100)} suffix="%" color={colors.text} />
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>Confidence</Text>
               </View>
             </Animated.View>
 
-            <View style={styles.modelBadge}>
-              <Ionicons name="hardware-chip-outline" size={14} color="#00E676" />
-              <Text style={styles.modelText}>{data.stats.model}</Text>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>Live</Text>
+            <View style={[styles.modelBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="hardware-chip-outline" size={14} color={colors.accent} />
+              <Text style={[styles.modelText, { color: colors.text }]}>{data.stats.model}</Text>
+              <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
+              <Text style={[styles.liveText, { color: colors.accent }]}>Live</Text>
             </View>
 
-            <Text style={styles.sectionLabel}>WC2026 PREDICTIONS</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>WC2026 PREDICTIONS</Text>
 
             <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: cardsSlide }] }}>
               {data.matches.map((m, i) => (
@@ -170,12 +183,11 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0B0F1A" },
+  root: { flex: 1 },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#1C2540",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -185,70 +197,62 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#00E67615",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#00E67625",
   },
-  greeting: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
-  logoSub: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#4A5568" },
+  greeting: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  logoSub: { fontSize: 11, fontFamily: "Inter_400Regular" },
   notifBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#131B2E",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#1C2540",
   },
   notifDot: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#00E676",
+    top: 6,
+    right: 6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
+  notifCount: { fontSize: 9, fontFamily: "Inter_700Bold", color: "#0B0F1A" },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 20 },
   loadingBox: { alignItems: "center", marginTop: 60, gap: 12 },
-  loadingText: { fontSize: 13, color: "#4A5568", fontFamily: "Inter_400Regular" },
+  loadingText: { fontSize: 13, fontFamily: "Inter_400Regular" },
   errorBox: { alignItems: "center", marginTop: 60, gap: 8 },
   errorIconCircle: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#FF525215",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
   },
-  errorTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  errorText: { fontSize: 13, color: "#4A5568", fontFamily: "Inter_400Regular" },
+  errorTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  errorText: { fontSize: 13, fontFamily: "Inter_400Regular" },
   retryBtn: {
-    backgroundColor: "#131B2E",
     borderRadius: 10,
     paddingHorizontal: 24,
     paddingVertical: 10,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: "#1C2540",
   },
-  retryText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#00E676" },
+  retryText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   statsRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
   statCard: {
     flex: 1,
-    backgroundColor: "#131B2E",
     borderRadius: 16,
     padding: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#1C2540",
   },
-  statCardAccent: { borderColor: "#00E67630", backgroundColor: "#0D1A14" },
   statIconBg: {
     width: 36,
     height: 36,
@@ -257,12 +261,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  statValue: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  statLabel: { fontSize: 10, fontFamily: "Inter_400Regular", color: "#4A5568", marginTop: 2 },
+  statValue: { fontSize: 22, fontFamily: "Inter_700Bold" },
+  statLabel: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 2 },
   modelBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#131B2E",
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -270,15 +273,13 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#1C2540",
   },
-  modelText: { fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#00E676", marginLeft: 4 },
-  liveText: { fontSize: 11, fontFamily: "Inter_500Medium", color: "#00E676" },
+  modelText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  liveDot: { width: 6, height: 6, borderRadius: 3, marginLeft: 4 },
+  liveText: { fontSize: 11, fontFamily: "Inter_500Medium" },
   sectionLabel: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
-    color: "#4A5568",
     letterSpacing: 1,
     marginBottom: 12,
   },

@@ -6,35 +6,40 @@ Football betting analysis app for the 2026 FIFA World Cup, built with React Nati
 
 ```
 server/                    # Node.js/Express API (port 3001)
-  index.ts                 # Express app entry
+  index.ts                 # Express app entry + static file serving for production
   data/demo.ts             # Demo WC2026 match/prediction data
   routes/auth.ts           # JWT auth (register/login/google/me) with PostgreSQL
   routes/football.ts       # Live football data from TheSportsDB
+  routes/predictions.ts    # User predictions CRUD (GET/POST/DELETE/stats)
   middleware/auth.ts        # JWT verification middleware
   lib/analysis.ts          # Poisson AI match analysis engine
   lib/db.ts                # PostgreSQL connection pool
 mobile/                    # Expo React Native app (port 5000 web preview)
   app/
-    _layout.tsx            # Root layout + AuthProvider + Google OAuth handler
+    _layout.tsx            # Root layout + ThemeProvider + NotificationsProvider + AuthProvider + Google OAuth handler
     index.tsx              # Auth redirect (login or tabs)
+    notifications.tsx      # Notifications screen (modal)
     (auth)/
       _layout.tsx          # Auth stack layout
       login.tsx            # Login screen (email/password + Google Sign-In)
       register.tsx         # Register screen with password strength
     (tabs)/
-      _layout.tsx          # Tab navigator (5 tabs)
-      index.tsx            # Dashboard with animated counters
+      _layout.tsx          # Tab navigator (5 visible tabs) with theme support
+      index.tsx            # Dashboard with animated counters + notification badge
       matches.tsx          # WC2026 matches with filters
       value-bets.tsx       # AI-detected value bets
-      backtest.tsx         # Historical performance metrics
-      profile.tsx          # User profile + settings + logout
+      history.tsx          # Saved predictions with stats
+      backtest.tsx         # Historical performance metrics (hidden from tab bar)
+      profile.tsx          # User profile + dark/light toggle + settings + logout
   components/
-    MatchCard.tsx          # Animated match card with odds
+    MatchCard.tsx          # Animated match card with odds + save button
     ProbabilityBar.tsx     # 1X2 probability bar
   lib/
     types.ts               # TypeScript types
     query-client.ts        # React Query + API client
     auth-context.tsx       # Auth state (JWT + SecureStore)
+    theme-context.tsx      # Dark/Light mode theme system
+    notifications-context.tsx  # In-app notification system
   metro.config.js          # Proxy /api/* → backend port 3001
 backend/                   # (Legacy) Python FastAPI - not active
 ```
@@ -83,13 +88,36 @@ PostgreSQL (Replit built-in) with tables:
 
 ## Screens
 
-- **Login/Register** — Email+password auth with Google Sign-In
-- **Dashboard** — Animated stats counters + match prediction cards
+- **Login/Register** — Email+password auth with Google Sign-In (theme-aware)
+- **Dashboard** — Animated stats counters + match prediction cards + notification badge
 - **Matches** — WC2026 matches with Group Stage / Knockout filters
 - **Value Bets** — AI-detected betting opportunities with Kelly stakes
 - **History** — Saved predictions list with stats, delete support
+- **Notifications** — In-app notification center (match alerts, results, value bets, system)
 - **Backtest** — Monthly ROI chart + Sharpe ratio + performance metrics (hidden from tab bar)
-- **Profile** — User info, settings, sign out
+- **Profile** — User info, dark/light mode toggle, settings, sign out
+
+## Features
+
+### Dark/Light Mode
+- ThemeProvider wraps entire app via `mobile/lib/theme-context.tsx`
+- Toggle in Profile > Settings via Switch component
+- Theme preference persisted in localStorage (web)
+- All screens use dynamic `colors` from `useTheme()` hook
+
+### In-App Notifications
+- NotificationsProvider via `mobile/lib/notifications-context.tsx`
+- Types: match alerts, results, value bets, system updates
+- Notification badge on Dashboard header with unread count
+- Full notification center screen (modal) with mark-as-read, clear all
+- Auto-generates periodic match notifications (every 5 min)
+- Persisted in localStorage (max 50)
+
+### Deployment
+- Configured for Replit autoscale deployment
+- Build: Expo web export → server serves static files
+- Production: Single server serves both API and web frontend
+- JWT_SECRET set as env var for secure production auth
 
 ## Tech Stack
 
@@ -99,7 +127,7 @@ PostgreSQL (Replit built-in) with tables:
 - **AI Engine:** Poisson distribution model for goal predictions
 - **Football Data:** TheSportsDB free API
 - **Auth:** JWT + Google OAuth (implicit flow with CSRF state)
-- **Design:** Dark theme (#0B0F1A), green accent (#00E676), Inter font
+- **Design:** Dark/Light theme system, green accent (#00E676 / #00C853), Inter font
 
 ## Auth Flow
 
@@ -115,7 +143,7 @@ PostgreSQL (Replit built-in) with tables:
 - `DATABASE_URL` — PostgreSQL connection string (auto-set by Replit)
 - `GOOGLE_CLIENT_ID` — Google OAuth Client ID
 - `GOOGLE_CLIENT_SECRET` — Google OAuth Client Secret
-- `JWT_SECRET` — JWT signing secret (uses fallback in dev)
+- `JWT_SECRET` — JWT signing secret (production-secure random key)
 
 ## iOS Testing
 

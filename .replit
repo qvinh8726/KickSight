@@ -58,3 +58,9 @@ externalPort = 80
 [userenv.shared]
 GOOGLE_CLIENT_ID = "1096780671141-s176tiftlpmg34hb91388536tm3ghr7c.apps.googleusercontent.com"
 EXPO_PUBLIC_GOOGLE_CLIENT_ID = "1096780671141-s176tiftlpmg34hb91388536tm3ghr7c.apps.googleusercontent.com"
+JWT_SECRET = "a4f8655888ab526a66554d6289e544090054138f271025cd91768d262cfc5e9e7452800c096995348f3af1b987c075b8"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["bash", "-c", "cd server && node -e \"require('tsx/cjs'); require('./index.ts')\""]
+build = ["bash", "-c", "cd mobile && npm run build:web && cd ../server && npm install"]

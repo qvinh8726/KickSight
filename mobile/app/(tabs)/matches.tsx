@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { apiRequest } from "@/lib/query-client";
+import { useTheme } from "@/lib/theme-context";
 import type { DashboardData } from "@/lib/types";
 
 const fmtDate = (d: string) => {
@@ -28,6 +29,7 @@ export default function MatchesScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [filter, setFilter] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
+  const { colors } = useTheme();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -58,24 +60,28 @@ export default function MatchesScreen() {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: topPad }]}>
+    <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: topPad }]}>
       <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
         <View style={styles.titleRow}>
-          <Ionicons name="football" size={24} color="#00E676" />
-          <Text style={styles.title}>Matches</Text>
+          <Ionicons name="football" size={24} color={colors.accent} />
+          <Text style={[styles.title, { color: colors.text }]}>Matches</Text>
         </View>
-        <Text style={styles.subtitle}>{matches.length} upcoming WC2026</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{matches.length} upcoming WC2026</Text>
       </Animated.View>
 
       <Animated.View style={[styles.filterRow, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {FILTERS.map((f) => (
           <TouchableOpacity
             key={f}
-            style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
+            style={[
+              styles.filterBtn,
+              { backgroundColor: colors.card, borderColor: colors.border },
+              filter === f && { backgroundColor: colors.accentBg, borderColor: colors.accent },
+            ]}
             onPress={() => setFilter(f)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
+            <Text style={[styles.filterText, { color: colors.textMuted }, filter === f && { color: colors.accent }]}>{f}</Text>
           </TouchableOpacity>
         ))}
       </Animated.View>
@@ -84,20 +90,18 @@ export default function MatchesScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00E676" />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         {isLoading && (
           <View style={styles.loadingBox}>
-            <ActivityIndicator color="#00E676" size="large" />
-            <Text style={styles.loading}>Loading matches...</Text>
+            <ActivityIndicator color={colors.accent} size="large" />
+            <Text style={[styles.loading, { color: colors.textMuted }]}>Loading matches...</Text>
           </View>
         )}
         {isError && (
           <View style={styles.loadingBox}>
-            <Ionicons name="cloud-offline-outline" size={28} color="#FF5252" />
-            <Text style={styles.loading}>Could not load matches</Text>
+            <Ionicons name="cloud-offline-outline" size={28} color={colors.danger} />
+            <Text style={[styles.loading, { color: colors.textMuted }]}>Could not load matches</Text>
           </View>
         )}
         {matches.map((m, idx) => {
@@ -107,68 +111,69 @@ export default function MatchesScreen() {
               key={m.match.id}
               style={[
                 styles.card,
-                hasValue && styles.cardGlow,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                hasValue && { borderColor: colors.borderAccent, backgroundColor: colors.cardAccent },
                 { opacity: fadeAnim },
               ]}
             >
               <View style={styles.cardTop}>
-                <View style={styles.metaLeft}>
-                  <View style={styles.stagePill}>
-                    <Text style={styles.stage}>{m.match.competition_stage?.replace("_", " ")}</Text>
+                <View>
+                  <View style={[styles.stagePill, { backgroundColor: colors.border + "80" }]}>
+                    <Text style={[styles.stage, { color: colors.textSecondary }]}>{m.match.competition_stage?.replace("_", " ")}</Text>
                   </View>
-                  <Text style={styles.date}>{fmtDate(m.match.match_date)}</Text>
+                  <Text style={[styles.date, { color: colors.textSecondary }]}>{fmtDate(m.match.match_date)}</Text>
                 </View>
                 <View style={styles.pills}>
                   {m.match.is_knockout && (
-                    <View style={styles.pill}>
-                      <Text style={styles.pillText}>KO</Text>
+                    <View style={[styles.pill, { backgroundColor: colors.dangerBg }]}>
+                      <Text style={[styles.pillText, { color: colors.danger }]}>KO</Text>
                     </View>
                   )}
                   {m.match.is_neutral_venue && (
-                    <View style={[styles.pill, styles.pillBlue]}>
-                      <Text style={[styles.pillText, { color: "#3B82F6" }]}>N</Text>
+                    <View style={[styles.pill, { backgroundColor: colors.blueBg }]}>
+                      <Text style={[styles.pillText, { color: colors.blue }]}>N</Text>
                     </View>
                   )}
                   {hasValue && (
-                    <View style={[styles.pill, styles.pillGreen]}>
-                      <Ionicons name="flash" size={9} color="#00E676" />
-                      <Text style={[styles.pillText, { color: "#00E676" }]}>{m.value_bets.length}</Text>
+                    <View style={[styles.pill, { backgroundColor: colors.accentBg }]}>
+                      <Ionicons name="flash" size={9} color={colors.accent} />
+                      <Text style={[styles.pillText, { color: colors.accent }]}>{m.value_bets.length}</Text>
                     </View>
                   )}
                 </View>
               </View>
 
               <View style={styles.teams}>
-                <Text style={styles.team} numberOfLines={1}>{m.match.home_team}</Text>
+                <Text style={[styles.team, { color: colors.text }]} numberOfLines={1}>{m.match.home_team}</Text>
                 <View style={styles.scoreBox}>
-                  <View style={styles.vsCircle}>
-                    <Text style={styles.vsText}>VS</Text>
+                  <View style={[styles.vsCircle, { backgroundColor: colors.border }]}>
+                    <Text style={[styles.vsText, { color: colors.textMuted }]}>VS</Text>
                   </View>
-                  <Text style={styles.projScore}>{m.prediction.projected_scoreline}</Text>
+                  <Text style={[styles.projScore, { color: colors.textSecondary }]}>{m.prediction.projected_scoreline}</Text>
                 </View>
-                <Text style={[styles.team, styles.teamRight]} numberOfLines={1}>{m.match.away_team}</Text>
+                <Text style={[styles.team, { color: colors.text, textAlign: "right" }]} numberOfLines={1}>{m.match.away_team}</Text>
               </View>
 
               <View style={styles.probRow}>
-                <View style={[styles.probSegment, { flex: m.prediction.prob_home, backgroundColor: "#00E676" }]} />
-                <View style={[styles.probSegment, { flex: m.prediction.prob_draw, backgroundColor: "#2D3748", marginHorizontal: 2 }]} />
-                <View style={[styles.probSegment, { flex: m.prediction.prob_away, backgroundColor: "#FF5252" }]} />
+                <View style={[styles.probSegment, { flex: m.prediction.prob_home, backgroundColor: colors.accent }]} />
+                <View style={[styles.probSegment, { flex: m.prediction.prob_draw, backgroundColor: colors.probDraw, marginHorizontal: 2 }]} />
+                <View style={[styles.probSegment, { flex: m.prediction.prob_away, backgroundColor: colors.danger }]} />
               </View>
 
               <View style={styles.probLabels}>
-                <Text style={[styles.probPct, { color: "#00E676" }]}>{Math.round(m.prediction.prob_home * 100)}%</Text>
-                <Text style={[styles.probPct, { color: "#8892A4" }]}>{Math.round(m.prediction.prob_draw * 100)}%</Text>
-                <Text style={[styles.probPct, { color: "#FF5252" }]}>{Math.round(m.prediction.prob_away * 100)}%</Text>
+                <Text style={[styles.probPct, { color: colors.accent }]}>{Math.round(m.prediction.prob_home * 100)}%</Text>
+                <Text style={[styles.probPct, { color: colors.textSecondary }]}>{Math.round(m.prediction.prob_draw * 100)}%</Text>
+                <Text style={[styles.probPct, { color: colors.danger }]}>{Math.round(m.prediction.prob_away * 100)}%</Text>
               </View>
 
               <View style={styles.cardBottom}>
                 <View style={styles.confRow}>
-                  <View style={styles.confBarBg}>
-                    <View style={[styles.confBarFill, { width: `${Math.round(m.prediction.confidence * 100)}%` as any }]} />
+                  <View style={[styles.confBarBg, { backgroundColor: colors.border }]}>
+                    <View style={[styles.confBarFill, { width: `${Math.round(m.prediction.confidence * 100)}%` as any, backgroundColor: colors.accent }]} />
                   </View>
-                  <Text style={styles.conf}>{Math.round(m.prediction.confidence * 100)}% conf</Text>
+                  <Text style={[styles.conf, { color: colors.textMuted }]}>{Math.round(m.prediction.confidence * 100)}% conf</Text>
                 </View>
-                {m.odds[0] && <Text style={styles.bookmaker}>{m.odds[0].bookmaker}</Text>}
+                {m.odds[0] && <Text style={[styles.bookmaker, { color: colors.textMuted }]}>{m.odds[0].bookmaker}</Text>}
               </View>
             </Animated.View>
           );
@@ -180,94 +185,40 @@ export default function MatchesScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0B0F1A" },
+  root: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  subtitle: { fontSize: 13, color: "#4A5568", fontFamily: "Inter_400Regular", marginTop: 2 },
-  filterRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  filterBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#131B2E",
-    borderWidth: 1,
-    borderColor: "#1C2540",
-  },
-  filterBtnActive: { backgroundColor: "#00E67620", borderColor: "#00E676" },
-  filterText: { fontSize: 12, color: "#4A5568", fontFamily: "Inter_600SemiBold" },
-  filterTextActive: { color: "#00E676" },
+  title: { fontSize: 26, fontFamily: "Inter_700Bold" },
+  subtitle: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
+  filterRow: { flexDirection: "row", paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
+  filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  filterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16 },
   loadingBox: { alignItems: "center", marginTop: 60, gap: 12 },
-  loading: { color: "#4A5568", textAlign: "center", fontFamily: "Inter_400Regular" },
-  card: {
-    backgroundColor: "#131B2E",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#1C2540",
-  },
-  cardGlow: { borderColor: "#00E67630", backgroundColor: "#0D1A14" },
+  loading: { textAlign: "center", fontFamily: "Inter_400Regular" },
+  card: { borderRadius: 18, padding: 16, marginBottom: 10, borderWidth: 1 },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
-  metaLeft: {},
-  stagePill: {
-    backgroundColor: "#1C254080",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    alignSelf: "flex-start",
-    marginBottom: 4,
-  },
-  stage: { fontSize: 9, color: "#8892A4", fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, textTransform: "uppercase" },
-  date: { fontSize: 12, color: "#8892A4", fontFamily: "Inter_500Medium", marginTop: 2 },
+  stagePill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: "flex-start", marginBottom: 4 },
+  stage: { fontSize: 9, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, textTransform: "uppercase" },
+  date: { fontSize: 12, fontFamily: "Inter_500Medium", marginTop: 2 },
   pills: { flexDirection: "row", gap: 4 },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FF525218",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    gap: 2,
-  },
-  pillBlue: { backgroundColor: "#3B82F618" },
-  pillGreen: { backgroundColor: "#00E67618" },
-  pillText: { fontSize: 9, color: "#FF5252", fontFamily: "Inter_700Bold" },
+  pill: { flexDirection: "row", alignItems: "center", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, gap: 2 },
+  pillText: { fontSize: 9, fontFamily: "Inter_700Bold" },
   teams: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  team: { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  teamRight: { textAlign: "right" },
+  team: { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },
   scoreBox: { width: 52, alignItems: "center" },
-  vsCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#1C2540",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  vsText: { fontSize: 9, color: "#4A5568", fontFamily: "Inter_700Bold" },
-  projScore: { fontSize: 12, color: "#8892A4", fontFamily: "Inter_600SemiBold", marginTop: 2 },
+  vsCircle: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  vsText: { fontSize: 9, fontFamily: "Inter_700Bold" },
+  projScore: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginTop: 2 },
   probRow: { flexDirection: "row", height: 5, borderRadius: 3, overflow: "hidden", marginBottom: 4 },
   probSegment: { height: 5 },
   probLabels: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
   probPct: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   cardBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   confRow: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
-  confBarBg: {
-    width: 80,
-    height: 3,
-    backgroundColor: "#1C2540",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  confBarFill: { height: 3, backgroundColor: "#00E676", borderRadius: 2 },
-  conf: { fontSize: 11, color: "#4A5568", fontFamily: "Inter_400Regular" },
-  bookmaker: { fontSize: 11, color: "#4A5568", fontFamily: "Inter_400Regular" },
+  confBarBg: { width: 80, height: 3, borderRadius: 2, overflow: "hidden" },
+  confBarFill: { height: 3, borderRadius: 2 },
+  conf: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  bookmaker: { fontSize: 11, fontFamily: "Inter_400Regular" },
 });

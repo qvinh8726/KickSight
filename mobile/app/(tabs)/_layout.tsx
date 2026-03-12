@@ -3,20 +3,14 @@ import { Tabs, useRouter } from "expo-router";
 import { Platform, View } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
-
-const C = {
-  bg: "#0B0F1A",
-  tabBar: "#0F1521",
-  tabBorder: "#1C2540",
-  active: "#00E676",
-  inactive: "#4A5568",
-};
 
 export default function TabLayout() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -31,15 +25,15 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: C.tabBar,
-          borderTopColor: C.tabBorder,
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBorder,
           borderTopWidth: 1,
           height: Platform.OS === "web" ? 84 : 80,
           paddingBottom: Platform.OS === "web" ? 34 : 20,
           paddingTop: 10,
         },
-        tabBarActiveTintColor: C.active,
-        tabBarInactiveTintColor: C.inactive,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontSize: 10, fontFamily: "Inter_500Medium", marginTop: 2 },
       }}
     >

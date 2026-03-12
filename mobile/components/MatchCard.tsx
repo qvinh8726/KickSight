@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ProbabilityBar from "./ProbabilityBar";
 import { apiRequest } from "@/lib/query-client";
+import { useTheme } from "@/lib/theme-context";
 import type { DashboardMatch } from "@/lib/types";
 
 interface Props {
@@ -24,6 +25,7 @@ export default function MatchCard({ data, index = 0 }: Props) {
   const bookOdds = odds[0];
   const [saved, setSaved] = useState(false);
   const qc = useQueryClient();
+  const { colors } = useTheme();
 
   const saveMutation = useMutation({
     mutationFn: () => {
@@ -71,27 +73,32 @@ export default function MatchCard({ data, index = 0 }: Props) {
   }, []);
 
   return (
-    <Animated.View style={[styles.card, hasValue && styles.cardHighlight, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View style={[
+      styles.card,
+      { backgroundColor: colors.card, borderColor: colors.border },
+      hasValue && { borderColor: colors.borderAccent, backgroundColor: colors.cardAccent },
+      { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+    ]}>
       {hasValue && (
-        <View style={styles.valuePill}>
+        <View style={[styles.valuePill, { backgroundColor: colors.accent }]}>
           <Ionicons name="flash" size={8} color="#0B0F1A" />
           <Text style={styles.valuePillText}>{value_bets.length} VALUE</Text>
         </View>
       )}
 
       <View style={styles.header}>
-        <View style={styles.stageBadge}>
-          <Text style={styles.stageText}>{match.competition_stage?.replace("_", " ")}</Text>
+        <View style={[styles.stageBadge, { backgroundColor: colors.border + "80" }]}>
+          <Text style={[styles.stageText, { color: colors.textSecondary }]}>{match.competition_stage?.replace("_", " ")}</Text>
         </View>
         <View style={styles.badges}>
           {match.is_knockout && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>KO</Text>
+            <View style={[styles.badge, { backgroundColor: colors.dangerBg }]}>
+              <Text style={[styles.badgeText, { color: colors.danger }]}>KO</Text>
             </View>
           )}
           {match.is_neutral_venue && (
-            <View style={[styles.badge, styles.badgeBlue]}>
-              <Text style={[styles.badgeText, { color: "#3B82F6" }]}>NEUTRAL</Text>
+            <View style={[styles.badge, { backgroundColor: colors.blueBg }]}>
+              <Text style={[styles.badgeText, { color: colors.blue }]}>NEUTRAL</Text>
             </View>
           )}
         </View>
@@ -99,18 +106,18 @@ export default function MatchCard({ data, index = 0 }: Props) {
 
       <View style={styles.teamsRow}>
         <View style={styles.teamSide}>
-          <Text style={styles.teamName} numberOfLines={1}>{match.home_team}</Text>
-          <Text style={styles.teamDate}>{fmtDate(match.match_date)}</Text>
+          <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={1}>{match.home_team}</Text>
+          <Text style={[styles.teamDate, { color: colors.textMuted }]}>{fmtDate(match.match_date)}</Text>
         </View>
         <View style={styles.vsBox}>
-          <View style={styles.vsCircle}>
-            <Text style={styles.vs}>VS</Text>
+          <View style={[styles.vsCircle, { backgroundColor: colors.border }]}>
+            <Text style={[styles.vs, { color: colors.textMuted }]}>VS</Text>
           </View>
         </View>
         <View style={[styles.teamSide, styles.teamRight]}>
-          <Text style={[styles.teamName, { textAlign: "right" }]} numberOfLines={1}>{match.away_team}</Text>
-          <Text style={[styles.teamDate, { textAlign: "right" }]}>
-            <Ionicons name="trending-up-outline" size={10} color="#4A5568" /> {prediction.projected_scoreline}
+          <Text style={[styles.teamName, { color: colors.text, textAlign: "right" }]} numberOfLines={1}>{match.away_team}</Text>
+          <Text style={[styles.teamDate, { color: colors.textMuted, textAlign: "right" }]}>
+            <Ionicons name="trending-up-outline" size={10} color={colors.textMuted} /> {prediction.projected_scoreline}
           </Text>
         </View>
       </View>
@@ -123,45 +130,40 @@ export default function MatchCard({ data, index = 0 }: Props) {
         awayLabel={match.away_team.slice(0, 3).toUpperCase()}
       />
 
-      <View style={styles.oddsRow}>
-        <OddsCell label="Fair 1" value={fmtOdds(fair_odds_home)} color="#00E676" />
-        <OddsCell label="Fair X" value={fmtOdds(fair_odds_draw)} color="#8892A4" />
-        <OddsCell label="Fair 2" value={fmtOdds(fair_odds_away)} color="#FF5252" />
+      <View style={[styles.oddsRow, { borderTopColor: colors.border }]}>
+        <OddsCell label="Fair 1" value={fmtOdds(fair_odds_home)} color={colors.accent} textColor={colors.text} mutedColor={colors.textMuted} />
+        <OddsCell label="Fair X" value={fmtOdds(fair_odds_draw)} color={colors.textSecondary} textColor={colors.text} mutedColor={colors.textMuted} />
+        <OddsCell label="Fair 2" value={fmtOdds(fair_odds_away)} color={colors.danger} textColor={colors.text} mutedColor={colors.textMuted} />
         {bookOdds && (
           <>
-            <View style={styles.oddsDivider} />
-            <OddsCell label="Book 1" value={fmtOdds(bookOdds.home)} />
-            <OddsCell label="Book X" value={fmtOdds(bookOdds.draw)} />
-            <OddsCell label="Book 2" value={fmtOdds(bookOdds.away)} />
+            <View style={[styles.oddsDivider, { backgroundColor: colors.border }]} />
+            <OddsCell label="Book 1" value={fmtOdds(bookOdds.home)} textColor={colors.text} mutedColor={colors.textMuted} />
+            <OddsCell label="Book X" value={fmtOdds(bookOdds.draw)} textColor={colors.text} mutedColor={colors.textMuted} />
+            <OddsCell label="Book 2" value={fmtOdds(bookOdds.away)} textColor={colors.text} mutedColor={colors.textMuted} />
           </>
         )}
       </View>
 
       <View style={styles.footer}>
         <View style={styles.confidenceRow}>
-          <View style={styles.confBarBg}>
-            <View
-              style={[
-                styles.confBarFill,
-                { width: `${Math.round(prediction.confidence * 100)}%` as any },
-              ]}
-            />
+          <View style={[styles.confBarBg, { backgroundColor: colors.border }]}>
+            <View style={[styles.confBarFill, { width: `${Math.round(prediction.confidence * 100)}%` as any, backgroundColor: colors.accent }]} />
           </View>
-          <Text style={styles.confidence}>{Math.round(prediction.confidence * 100)}%</Text>
+          <Text style={[styles.confidence, { color: colors.textSecondary }]}>{Math.round(prediction.confidence * 100)}%</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 6 }}>
           <TouchableOpacity
-            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
+            style={[styles.saveBtn, { backgroundColor: colors.accentBg }, saved && { backgroundColor: colors.accent }]}
             onPress={() => !saved && saveMutation.mutate()}
             disabled={saved || saveMutation.isPending}
             activeOpacity={0.7}
           >
-            <Ionicons name={saved ? "checkmark" : "bookmark-outline"} size={12} color={saved ? "#0B0F1A" : "#00E676"} />
-            <Text style={[styles.saveBtnText, saved && styles.saveBtnTextSaved]}>{saved ? "Saved" : "Save"}</Text>
+            <Ionicons name={saved ? "checkmark" : "bookmark-outline"} size={12} color={saved ? "#0B0F1A" : colors.accent} />
+            <Text style={[styles.saveBtnText, { color: colors.accent }, saved && { color: "#0B0F1A" }]}>{saved ? "Saved" : "Save"}</Text>
           </TouchableOpacity>
           {bookOdds && (
-            <View style={styles.bookBadge}>
-              <Text style={styles.bookName}>{bookOdds.bookmaker}</Text>
+            <View style={[styles.bookBadge, { backgroundColor: colors.border }]}>
+              <Text style={[styles.bookName, { color: colors.textSecondary }]}>{bookOdds.bookmaker}</Text>
             </View>
           )}
         </View>
@@ -170,152 +172,50 @@ export default function MatchCard({ data, index = 0 }: Props) {
   );
 }
 
-function OddsCell({ label, value, color }: { label: string; value: string; color?: string }) {
+function OddsCell({ label, value, color, textColor, mutedColor }: { label: string; value: string; color?: string; textColor: string; mutedColor: string }) {
   return (
     <View style={styles.oddsCell}>
-      <Text style={styles.oddsLabel}>{label}</Text>
-      <Text style={[styles.oddsVal, color ? { color } : undefined]}>{value}</Text>
+      <Text style={[styles.oddsLabel, { color: mutedColor }]}>{label}</Text>
+      <Text style={[styles.oddsVal, { color: color || textColor }]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#131B2E",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#1C2540",
-  },
-  cardHighlight: {
-    borderColor: "#00E67640",
-    backgroundColor: "#0D1A14",
-  },
+  card: { borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1 },
   valuePill: {
-    position: "absolute",
-    top: -1,
-    right: 14,
-    backgroundColor: "#00E676",
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
+    position: "absolute", top: -1, right: 14,
+    borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 4,
+    flexDirection: "row", alignItems: "center", gap: 3,
   },
-  valuePillText: {
-    color: "#0B0F1A",
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.5,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  stageBadge: {
-    backgroundColor: "#1C254080",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  stageText: {
-    fontSize: 9,
-    color: "#8892A4",
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
+  valuePillText: { color: "#0B0F1A", fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
+  stageBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  stageText: { fontSize: 9, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, textTransform: "uppercase" },
   badges: { flexDirection: "row", gap: 4 },
-  badge: {
-    backgroundColor: "#FF525218",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  badgeBlue: { backgroundColor: "#3B82F618" },
-  badgeText: { fontSize: 8, color: "#FF5252", fontFamily: "Inter_700Bold" },
-  teamsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
+  badge: { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  badgeText: { fontSize: 8, fontFamily: "Inter_700Bold" },
+  teamsRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
   teamSide: { flex: 1 },
   teamRight: { alignItems: "flex-end" },
-  teamName: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    color: "#FFFFFF",
-  },
-  teamDate: {
-    fontSize: 11,
-    color: "#4A5568",
-    fontFamily: "Inter_400Regular",
-    marginTop: 3,
-  },
+  teamName: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  teamDate: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 3 },
   vsBox: { width: 44, alignItems: "center" },
-  vsCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#1C2540",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  vs: {
-    fontSize: 10,
-    color: "#4A5568",
-    fontFamily: "Inter_700Bold",
-  },
-  oddsRow: {
-    flexDirection: "row",
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#1C2540",
-  },
+  vsCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  vs: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  oddsRow: { flexDirection: "row", marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
   oddsCell: { flex: 1, alignItems: "center" },
-  oddsLabel: { fontSize: 9, color: "#4A5568", fontFamily: "Inter_400Regular", marginBottom: 3 },
-  oddsVal: { fontSize: 13, color: "#FFFFFF", fontFamily: "Inter_600SemiBold" },
-  oddsDivider: { width: 1, backgroundColor: "#1C2540", marginHorizontal: 4 },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-  },
+  oddsLabel: { fontSize: 9, fontFamily: "Inter_400Regular", marginBottom: 3 },
+  oddsVal: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  oddsDivider: { width: 1, marginHorizontal: 4 },
+  footer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
   confidenceRow: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
-  confBarBg: {
-    flex: 1,
-    height: 4,
-    backgroundColor: "#1C2540",
-    borderRadius: 2,
-    overflow: "hidden",
-    maxWidth: 100,
-  },
-  confBarFill: { height: 4, backgroundColor: "#00E676", borderRadius: 2 },
-  confidence: { fontSize: 11, color: "#8892A4", fontFamily: "Inter_500Medium" },
-  bookBadge: {
-    backgroundColor: "#1C2540",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  bookName: { fontSize: 10, color: "#8892A4", fontFamily: "Inter_500Medium" },
-  saveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#00E67618",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  saveBtnSaved: { backgroundColor: "#00E676" },
-  saveBtnText: { fontSize: 10, color: "#00E676", fontFamily: "Inter_600SemiBold" },
-  saveBtnTextSaved: { color: "#0B0F1A" },
+  confBarBg: { flex: 1, height: 4, borderRadius: 2, overflow: "hidden", maxWidth: 100 },
+  confBarFill: { height: 4, borderRadius: 2 },
+  confidence: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  bookBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  bookName: { fontSize: 10, fontFamily: "Inter_500Medium" },
+  saveBtn: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  saveBtnText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
 });

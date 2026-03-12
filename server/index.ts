@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { DEMO_MATCHES, BACKTEST_RESULTS } from "./data/demo";
 import authRoutes from "./routes/auth";
 import footballRoutes from "./routes/football";
@@ -66,6 +67,12 @@ app.get("/api/value-bets", (_req, res) => {
 
 app.get("/api/backtest", (_req, res) => {
   res.json(BACKTEST_RESULTS);
+});
+
+const webDistPath = path.join(__dirname, "..", "mobile", "dist");
+app.use(express.static(webDistPath));
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(webDistPath, "index.html"));
 });
 
 app.listen(PORT, () => {

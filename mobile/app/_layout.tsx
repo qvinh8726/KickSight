@@ -7,6 +7,8 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_7
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient, API_URL, setAuthToken } from "@/lib/query-client";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider, useTheme } from "@/lib/theme-context";
+import { NotificationsProvider } from "@/lib/notifications-context";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -104,14 +106,24 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </QueryClientProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <NotificationsProvider>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <ThemedStatusBar />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
+            </Stack>
+          </QueryClientProvider>
+        </AuthProvider>
+      </NotificationsProvider>
+    </ThemeProvider>
   );
+}
+
+function ThemedStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? "light" : "dark"} />;
 }

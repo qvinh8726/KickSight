@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { apiRequest } from "@/lib/query-client";
+import { useTheme } from "@/lib/theme-context";
 
 interface Prediction {
   id: number;
@@ -40,16 +41,6 @@ const fmtDate = (d: string) => {
   return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
-const outcomeColor = (outcome: string | null) => {
-  if (!outcome) return "#4A5568";
-  switch (outcome.toLowerCase()) {
-    case "home": return "#00E676";
-    case "away": return "#FF6B6B";
-    case "draw": return "#FFD93D";
-    default: return "#4A5568";
-  }
-};
-
 const outcomeLabel = (outcome: string | null) => {
   if (!outcome) return "—";
   switch (outcome.toLowerCase()) {
@@ -65,6 +56,7 @@ export default function HistoryScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [refreshing, setRefreshing] = useState(false);
   const qc = useQueryClient();
+  const { colors } = useTheme();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -120,71 +112,81 @@ export default function HistoryScreen() {
     setRefreshing(false);
   };
 
+  const outcomeColor = (outcome: string | null) => {
+    if (!outcome) return colors.textMuted;
+    switch (outcome.toLowerCase()) {
+      case "home": return colors.accent;
+      case "away": return colors.danger;
+      case "draw": return colors.yellow;
+      default: return colors.textMuted;
+    }
+  };
+
   return (
-    <View style={[styles.root, { paddingTop: topPad }]}>
+    <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: topPad }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00E676" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          <Text style={styles.title}>My Predictions</Text>
-          <Text style={styles.subtitle}>Your saved match analyses</Text>
+          <Text style={[styles.title, { color: colors.text }]}>My Predictions</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your saved match analyses</Text>
 
           <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Ionicons name="document-text" size={20} color="#00E676" />
-              <Text style={styles.statNumber}>{stats?.totalPredictions ?? 0}</Text>
-              <Text style={styles.statLabel}>Total</Text>
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="document-text" size={20} color={colors.accent} />
+              <Text style={[styles.statNumber, { color: colors.text }]}>{stats?.totalPredictions ?? 0}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total</Text>
             </View>
-            <View style={styles.statCard}>
-              <Ionicons name="time" size={20} color="#448AFF" />
-              <Text style={styles.statNumber}>{stats?.recentPredictions ?? 0}</Text>
-              <Text style={styles.statLabel}>This Week</Text>
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="time" size={20} color={colors.blue} />
+              <Text style={[styles.statNumber, { color: colors.text }]}>{stats?.recentPredictions ?? 0}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>This Week</Text>
             </View>
           </View>
 
           {isLoading && (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color="#00E676" />
+              <ActivityIndicator size="large" color={colors.accent} />
             </View>
           )}
 
           {isError && (
             <View style={styles.emptyState}>
-              <Ionicons name="alert-circle-outline" size={40} color="#FF5252" />
-              <Text style={styles.emptyText}>Failed to load predictions</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
-                <Text style={styles.retryText}>Retry</Text>
+              <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>Failed to load predictions</Text>
+              <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.accentBg }]} onPress={() => refetch()}>
+                <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {!isLoading && !isError && predictions?.length === 0 && (
             <View style={styles.emptyState}>
-              <Ionicons name="clipboard-outline" size={48} color="#2D3748" />
-              <Text style={styles.emptyTitle}>No predictions yet</Text>
-              <Text style={styles.emptyText}>
+              <Ionicons name="clipboard-outline" size={48} color={colors.border} />
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No predictions yet</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                 Go to Dashboard and analyze a match to save your first prediction!
               </Text>
             </View>
           )}
 
           {predictions?.map((p) => (
-            <View key={p.id} style={styles.predictionCard}>
+            <View key={p.id} style={[styles.predictionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.cardHeader}>
                 <View style={styles.teamsRow}>
-                  <Text style={styles.teamName}>{p.home_team}</Text>
-                  <Text style={styles.vsText}>vs</Text>
-                  <Text style={styles.teamName}>{p.away_team}</Text>
+                  <Text style={[styles.teamName, { color: colors.text }]}>{p.home_team}</Text>
+                  <Text style={[styles.vsText, { color: colors.textMuted }]}>vs</Text>
+                  <Text style={[styles.teamName, { color: colors.text }]}>{p.away_team}</Text>
                 </View>
                 <TouchableOpacity onPress={() => handleDelete(p.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name="trash-outline" size={16} color="#4A5568" />
+                  <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
 
               {p.competition && (
-                <Text style={styles.competition}>{p.competition}</Text>
+                <Text style={[styles.competition, { color: colors.textMuted }]}>{p.competition}</Text>
               )}
 
               <View style={styles.predictionInfo}>
@@ -196,33 +198,32 @@ export default function HistoryScreen() {
                   </View>
                 )}
                 {p.confidence && (
-                  <View style={styles.confidenceBadge}>
-                    <Ionicons name="analytics" size={12} color="#448AFF" />
-                    <Text style={styles.confidenceText}>{p.confidence}%</Text>
+                  <View style={[styles.confidenceBadge, { backgroundColor: colors.blueBg }]}>
+                    <Ionicons name="analytics" size={12} color={colors.blue} />
+                    <Text style={[styles.confidenceText, { color: colors.blue }]}>{p.confidence}%</Text>
                   </View>
                 )}
               </View>
 
               {(p.home_win_prob || p.draw_prob || p.away_win_prob) && (
-                <View style={styles.probRow}>
+                <View style={[styles.probRow, { backgroundColor: colors.bg }]}>
                   <View style={styles.probItem}>
-                    <Text style={styles.probLabel}>H</Text>
-                    <Text style={styles.probValue}>{p.home_win_prob ?? 0}%</Text>
+                    <Text style={[styles.probLabel, { color: colors.textMuted }]}>H</Text>
+                    <Text style={[styles.probValue, { color: colors.text }]}>{p.home_win_prob ?? 0}%</Text>
                   </View>
                   <View style={styles.probItem}>
-                    <Text style={styles.probLabel}>D</Text>
-                    <Text style={styles.probValue}>{p.draw_prob ?? 0}%</Text>
+                    <Text style={[styles.probLabel, { color: colors.textMuted }]}>D</Text>
+                    <Text style={[styles.probValue, { color: colors.text }]}>{p.draw_prob ?? 0}%</Text>
                   </View>
                   <View style={styles.probItem}>
-                    <Text style={styles.probLabel}>A</Text>
-                    <Text style={styles.probValue}>{p.away_win_prob ?? 0}%</Text>
+                    <Text style={[styles.probLabel, { color: colors.textMuted }]}>A</Text>
+                    <Text style={[styles.probValue, { color: colors.text }]}>{p.away_win_prob ?? 0}%</Text>
                   </View>
                 </View>
               )}
 
-              {p.notes && <Text style={styles.notes}>{p.notes}</Text>}
-
-              <Text style={styles.dateText}>{fmtDate(p.created_at)}</Text>
+              {p.notes && <Text style={[styles.notes, { color: colors.textSecondary }]}>{p.notes}</Text>}
+              <Text style={[styles.dateText, { color: colors.probDraw }]}>{fmtDate(p.created_at)}</Text>
             </View>
           ))}
 
@@ -234,76 +235,35 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0B0F1A" },
+  root: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
-  title: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#4A5568", marginTop: 4, marginBottom: 20 },
+  title: { fontSize: 26, fontFamily: "Inter_700Bold" },
+  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 4, marginBottom: 20 },
   statsRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#131B2E",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "#1C2540",
-  },
-  statNumber: { fontSize: 28, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  statLabel: { fontSize: 12, fontFamily: "Inter_500Medium", color: "#4A5568" },
+  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: "center", gap: 6, borderWidth: 1 },
+  statNumber: { fontSize: 28, fontFamily: "Inter_700Bold" },
+  statLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
   center: { paddingVertical: 60, alignItems: "center" },
   emptyState: { alignItems: "center", paddingVertical: 60, gap: 12 },
-  emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
-  emptyText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#4A5568", textAlign: "center", lineHeight: 20 },
-  retryBtn: {
-    backgroundColor: "#00E67620",
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    marginTop: 8,
-  },
-  retryText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#00E676" },
-  predictionCard: {
-    backgroundColor: "#131B2E",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#1C2540",
-  },
+  emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },
+  emptyText: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
+  retryBtn: { borderRadius: 10, paddingHorizontal: 20, paddingVertical: 8, marginTop: 8 },
+  retryText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  predictionCard: { borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   teamsRow: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
-  teamName: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
-  vsText: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#4A5568" },
-  competition: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#4A5568", marginTop: 4 },
+  teamName: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  vsText: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  competition: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4 },
   predictionInfo: { flexDirection: "row", gap: 8, marginTop: 12 },
-  outcomeBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
+  outcomeBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   outcomeText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  confidenceBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#448AFF20",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  confidenceText: { fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#448AFF" },
-  probRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 12,
-    backgroundColor: "#0B0F1A",
-    borderRadius: 10,
-    padding: 10,
-  },
+  confidenceBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  confidenceText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  probRow: { flexDirection: "row", gap: 12, marginTop: 12, borderRadius: 10, padding: 10 },
   probItem: { flex: 1, alignItems: "center" },
-  probLabel: { fontSize: 11, fontFamily: "Inter_500Medium", color: "#4A5568" },
-  probValue: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#FFFFFF", marginTop: 2 },
-  notes: { fontSize: 13, fontFamily: "Inter_400Regular", color: "#8892A4", marginTop: 10, lineHeight: 18 },
-  dateText: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#2D3748", marginTop: 10 },
+  probLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  probValue: { fontSize: 14, fontFamily: "Inter_700Bold", marginTop: 2 },
+  notes: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 10, lineHeight: 18 },
+  dateText: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 10 },
 });
