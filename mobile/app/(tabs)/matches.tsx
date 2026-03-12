@@ -14,6 +14,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { useTheme } from "@/lib/theme-context";
 import type { AllMatchesData, LiveMatch, StandingsData, StandingEntry } from "@/lib/types";
@@ -100,6 +101,7 @@ export default function MatchesScreen() {
   const [viewMode, setViewMode] = useState<typeof VIEW_MODES[number]>("Upcoming");
   const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
+  const router = useRouter();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -139,6 +141,32 @@ export default function MatchesScreen() {
     }
     await Promise.all(promises);
     setRefreshing(false);
+  };
+
+  const navigateToMatch = (m: LiveMatch) => {
+    const espnId = m.id.includes("_") ? m.id.split("_").slice(1).join("_") : m.id;
+    router.push({
+      pathname: "/match-detail",
+      params: {
+        leagueKey: m.league_key,
+        espnId,
+        homeTeam: m.home_team,
+        awayTeam: m.away_team,
+        homeBadge: m.home_badge || "",
+        awayBadge: m.away_badge || "",
+        homeScore: m.home_score?.toString() || "",
+        awayScore: m.away_score?.toString() || "",
+        date: m.date,
+        time: m.time,
+        venue: m.venue || "",
+        status: m.status,
+        league: m.league,
+        homeForm: (m as any).home_form || "",
+        awayForm: (m as any).away_form || "",
+        homeRecord: (m as any).home_record || "",
+        awayRecord: (m as any).away_record || "",
+      },
+    });
   };
 
   const totalMatches = viewMode === "Upcoming" ? upcoming.length : viewMode === "Results" ? results.length : (standingsData?.standings?.length ?? 0);
@@ -220,7 +248,7 @@ export default function MatchesScreen() {
               <Text style={[styles.dateHeaderCount, { color: colors.textMuted }]}>{group.matches.length} matches</Text>
             </View>
             {group.matches.map((m) => (
-              <MatchRow key={m.id} match={m} colors={colors} />
+              <MatchRow key={m.id} match={m} colors={colors} onPress={() => navigateToMatch(m)} />
             ))}
           </View>
         ))}
@@ -231,7 +259,7 @@ export default function MatchesScreen() {
               <Text style={[styles.dateHeaderText, { color: colors.textSecondary }]}>{group.label}</Text>
             </View>
             {group.matches.map((m) => (
-              <MatchRow key={m.id} match={m} colors={colors} />
+              <MatchRow key={m.id} match={m} colors={colors} onPress={() => navigateToMatch(m)} />
             ))}
           </View>
         ))}
@@ -261,13 +289,13 @@ export default function MatchesScreen() {
   );
 }
 
-function MatchRow({ match, colors }: { match: LiveMatch; colors: any }) {
+function MatchRow({ match, colors, onPress }: { match: LiveMatch; colors: any; onPress?: () => void }) {
   const isFinished = match.status === "finished";
   const isLive = match.status === "live";
   const hasScore = isFinished || isLive;
 
   return (
-    <View style={[styles.matchRow, { backgroundColor: colors.card, borderColor: isLive ? "#FF5252" : colors.border }]}>
+    <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={[styles.matchRow, { backgroundColor: colors.card, borderColor: isLive ? "#FF5252" : colors.border }]}>
       <View style={styles.matchLeagueTag}>
         <Text style={[styles.matchLeagueText, { color: colors.textMuted }]}>{match.league}</Text>
         {match.round && <Text style={[styles.matchRound, { color: colors.textMuted }]}>R{match.round}</Text>}
@@ -324,7 +352,7 @@ function MatchRow({ match, colors }: { match: LiveMatch; colors: any }) {
           </View>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 

@@ -66,24 +66,47 @@ function parseESPNEvent(e: any, leagueKey: string, leagueName: string) {
   const dateFormatted = dateObj.toISOString().slice(0, 10);
   const timeFormatted = dateObj.toISOString().slice(11, 16);
 
+  const homeStats: Record<string, string> = {};
+  for (const s of home.statistics || []) homeStats[s.name] = s.displayValue;
+  const awayStats: Record<string, string> = {};
+  for (const s of away.statistics || []) awayStats[s.name] = s.displayValue;
+
+  const broadcasts = (comp.broadcasts || []).flatMap((b: any) => b.names || []);
+
   return {
     id: `${leagueKey}_${e.id}`,
+    espn_id: e.id,
     home_team: home.team?.displayName || home.team?.name || "TBD",
     away_team: away.team?.displayName || away.team?.name || "TBD",
+    home_short: home.team?.shortDisplayName || home.team?.abbreviation || null,
+    away_short: away.team?.shortDisplayName || away.team?.abbreviation || null,
     home_score: homeScore,
     away_score: awayScore,
     date: dateFormatted,
     time: timeFormatted,
     venue: comp.venue?.fullName || null,
+    venue_city: comp.venue?.address?.city || null,
     league: leagueName,
     league_key: leagueKey,
     status,
     round: null,
     home_badge: home.team?.logo || null,
     away_badge: away.team?.logo || null,
+    home_color: home.team?.color || null,
+    away_color: away.team?.color || null,
     thumb: null,
     timestamp: dateStr,
     status_detail: comp.status?.type?.detail || comp.status?.type?.shortDetail || null,
+    home_form: home.form || null,
+    away_form: away.form || null,
+    home_record: home.records?.[0]?.summary || null,
+    away_record: away.records?.[0]?.summary || null,
+    attendance: comp.attendance || null,
+    broadcasts,
+    stats: (Object.keys(homeStats).length > 0 || Object.keys(awayStats).length > 0) ? {
+      home: homeStats,
+      away: awayStats,
+    } : null,
   };
 }
 
@@ -211,6 +234,90 @@ router.get("/standings", async (req, res) => {
   standings.sort((a: any, b: any) => a.rank - b.rank);
 
   res.json({ league: leagueInfo, standings });
+});
+
+router.get("/match-detail/:leagueKey/:espnId", async (req, res) => {
+  const { leagueKey, espnId } = req.params;
+  const leagueInfo = LEAGUES[leagueKey];
+  if (!leagueInfo) {
+    return res.status(400).json({ error: "Unknown league" });
+  }
+
+  const url = `${ESPN_BASE}/${leagueInfo.espnSlug}/summary?event=${espnId}`;
+  const data = await fetchWithCache(url);
+  if (!data) {
+    return res.status(404).json({ error: "Match not found" });
+  }
+
+  const header = data.header?.competitions?.[0] || {};
+  const competitors = header.competitors || [];
+  const home = competitors.find((c: any) => c.homeAway === "home");
+  const away = competitors.find((c: any) => c.homeAway === "away");
+
+  const boxTeams = data.boxscore?.teams || [];
+  const homeBox = boxTeams.find((t: any) => t.team?.displayName === home?.team?.displayName) || boxTeams[0];
+  const awayBox = boxTeams.find((t: any) => t.team?.displayName === away?.team?.displayName) || boxTeams[1];
+
+  const parseStats = (team: any) => {
+    if (!team?.statistics) return {};
+    const s: Record<string, string> = {};
+    for (const stat of team.statistics) {
+      s[stat.label || stat.name] = stat.displayValue;
+    }
+    return s;
+  };
+
+  const keyEvents = (data.keyEvents || []).filter((ke: any) => {
+    const type = ke.type?.text || "";
+    return ["Goal", "Yellow Card", "Red Card", "Penalty", "Substitution", "Own Goal"].some(t => type.includes(t));
+  }).map((ke: any) => ({
+    clock: ke.clock?.displayValue || "",
+    type: ke.type?.text || "",
+    text: ke.text || "",
+    team: ke.team?.displayName || null,
+  }));
+
+  const h2h = (data.headToHeadGames || []).slice(0, 5).map((g: any) => {
+    const c = g.competitions?.[0];
+    if (!c) return null;
+    const teams = c.competitors || [];
+    return {
+      date: c.date?.slice(0, 10) || "",
+      home: teams[0]?.team?.displayName || "?",
+      away: teams[1]?.team?.displayName || "?",
+      home_score: teams[0]?.score || "0",
+      away_score: teams[1]?.score || "0",
+    };
+  }).filter(Boolean);
+
+  const gameInfo = data.gameInfo || {};
+  const officials = (gameInfo.officials || []).map((o: any) => o.displayName).filter(Boolean);
+
+  res.json({
+    home_team: home?.team?.displayName || "TBD",
+    away_team: away?.team?.displayName || "TBD",
+    home_badge: home?.team?.logo || null,
+    away_badge: away?.team?.logo || null,
+    home_score: home?.score || null,
+    away_score: away?.score || null,
+    home_form: data.boxscore?.form?.[0]?.displayValue || home?.form || null,
+    away_form: data.boxscore?.form?.[1]?.displayValue || away?.form || null,
+    home_record: home?.record || null,
+    away_record: away?.record || null,
+    venue: gameInfo.venue?.fullName || null,
+    venue_city: gameInfo.venue?.address?.city || null,
+    venue_country: gameInfo.venue?.address?.country || null,
+    attendance: gameInfo.attendance || null,
+    referee: officials[0] || null,
+    officials,
+    league: leagueInfo.name,
+    league_key: leagueKey,
+    home_stats: parseStats(homeBox),
+    away_stats: parseStats(awayBox),
+    key_events: keyEvents,
+    head_to_head: h2h,
+    broadcasts: (data.broadcasts || []).flatMap((b: any) => b.market ? [`${b.station} (${b.market})`] : [b.station]).filter(Boolean),
+  });
 });
 
 router.get("/team/:name", async (req, res) => {
