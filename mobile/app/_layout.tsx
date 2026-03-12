@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { Platform } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Platform, View, ActivityIndicator, StyleSheet } from "react-native";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
@@ -10,13 +10,11 @@ import { AuthProvider } from "@/lib/auth-context";
 
 SplashScreen.preventAutoHideAsync();
 
-function GoogleOAuthHandler() {
-  const router = useRouter();
-
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
+function processGoogleOAuthSync(): boolean {
+  if (Platform.OS !== "web") return false;
+  try {
     const hash = window.location.hash;
-    if (!hash || !hash.includes("access_token=")) return;
+    if (!hash || !hash.includes("access_token=")) return false;
 
     const params = new URLSearchParams(hash.substring(1));
     const accessToken = params.get("access_token");
@@ -25,38 +23,64 @@ function GoogleOAuthHandler() {
     sessionStorage.removeItem("google_oauth_state");
 
     if (!accessToken || !returnedState || returnedState !== savedState) {
-      window.history.replaceState(null, "", window.location.pathname);
-      return;
+      window.history.replaceState(null, "", "/");
+      return false;
     }
 
     window.history.replaceState(null, "", "/");
+    sessionStorage.setItem("google_pending_token", accessToken);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const hasPendingGoogleAuth = processGoogleOAuthSync();
+
+function GoogleOAuthProcessor({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    if (Platform.OS !== "web") { onDone(); return; }
+
+    const pendingToken = sessionStorage.getItem("google_pending_token");
+    if (!pendingToken) { onDone(); return; }
+    sessionStorage.removeItem("google_pending_token");
 
     (async () => {
       try {
         const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${pendingToken}` },
         });
-        if (!userInfoRes.ok) return;
+        if (!userInfoRes.ok) { onDone(); return; }
         const userInfo = await userInfoRes.json();
 
         const res = await fetch(`${API_URL}/api/auth/google`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessToken, userInfo }),
+          body: JSON.stringify({ accessToken: pendingToken, userInfo }),
         });
         const data = await res.json();
         if (res.ok && data.token) {
           setAuthToken(data.token);
           localStorage.setItem("wc2026_auth_token", data.token);
           localStorage.setItem("wc2026_auth_user", JSON.stringify(data.user));
-          window.location.reload();
+          window.location.href = "/";
+          return;
         }
       } catch {}
+      onDone();
     })();
   }, []);
 
-  return null;
+  return (
+    <View style={gStyles.loadingContainer}>
+      <ActivityIndicator size="large" color="#00E676" />
+    </View>
+  );
 }
+
+const gStyles = StyleSheet.create({
+  loadingContainer: { flex: 1, backgroundColor: "#0B0F1A", alignItems: "center", justifyContent: "center" },
+});
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -65,6 +89,7 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const [processingGoogle, setProcessingGoogle] = useState(hasPendingGoogleAuth);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -74,10 +99,13 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) return null;
 
+  if (processingGoogle) {
+    return <GoogleOAuthProcessor onDone={() => setProcessingGoogle(false)} />;
+  }
+
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <GoogleOAuthHandler />
         <StatusBar style="light" />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />

@@ -41,24 +41,6 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
-  useEffect(() => {
-    if (Platform.OS === "web") {
-      const hash = window.location.hash;
-      if (hash && hash.includes("access_token=")) {
-        const params = new URLSearchParams(hash.substring(1));
-        const accessToken = params.get("access_token");
-        const returnedState = params.get("state");
-        const savedState = sessionStorage.getItem("google_oauth_state");
-        sessionStorage.removeItem("google_oauth_state");
-        if (accessToken && returnedState && returnedState === savedState) {
-          window.history.replaceState(null, "", window.location.pathname);
-          handleGoogleAccessToken(accessToken);
-        } else if (accessToken && !savedState) {
-          window.history.replaceState(null, "", window.location.pathname);
-        }
-      }
-    }
-  }, []);
 
   const handleGoogleAccessToken = async (accessToken: string) => {
     setGoogleLoading(true);
