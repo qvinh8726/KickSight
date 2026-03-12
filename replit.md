@@ -1,44 +1,64 @@
-# Football Betting AI - World Cup 2026
+# WC2026 Betting AI — React Native iOS App
 
-Probability-based football match prediction and value bet detection dashboard for the 2026 FIFA World Cup.
+Football betting analysis app for the 2026 FIFA World Cup, built with React Native (Expo) and a Node.js backend.
 
 ## Architecture
 
-- **Frontend:** Next.js 14 + Tailwind CSS + Recharts (in `frontend/`)
-- **Backend:** Python FastAPI + SQLAlchemy (in `backend/`) — requires PostgreSQL and Redis
-- **ML:** scikit-learn, XGBoost, LightGBM, SciPy
-
-## Running on Replit
-
-The frontend runs standalone on port 5000 with built-in demo data. The backend requires additional setup (see below).
-
-### Frontend (active workflow)
-- Command: `cd frontend && npm run dev`
-- Port: 5000
-- The app displays demo World Cup 2026 predictions when no backend is connected.
-
-### Backend (optional, requires external services)
-The backend needs:
-- PostgreSQL (`DATABASE_URL` env var)
-- Redis (`REDIS_URL` env var)
-- Optional: `FOOTBALL_DATA_API_KEY`, `ODDS_API_KEY`, `OPENAI_API_KEY`
-
-To start the backend separately:
-```bash
-uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
+server/          # Node.js/Express API (port 3001)
+  index.ts       # Express app entry
+  data/demo.ts   # Demo match/prediction data
+mobile/          # Expo React Native app (port 5000 web preview)
+  app/
+    _layout.tsx         # Root layout + QueryClient
+    (tabs)/
+      index.tsx         # Dashboard screen
+      matches.tsx       # All Matches screen
+      value-bets.tsx    # Value Bets screen
+      backtest.tsx      # Backtest Performance screen
+  components/
+    MatchCard.tsx       # Match card with probability bar
+    ProbabilityBar.tsx  # Animated 1X2 probability bar
+  lib/
+    types.ts            # TypeScript types
+    query-client.ts     # React Query + API client
+backend/         # (Legacy) Python FastAPI backend - not active
 ```
 
-## Environment Variables
+## Workflows
 
-See `.env.example` for all required variables. Set them as Replit secrets:
-- `DATABASE_URL` — PostgreSQL async connection string
-- `DATABASE_URL_SYNC` — PostgreSQL sync connection string
-- `REDIS_URL` — Redis connection string
-- `FOOTBALL_DATA_API_KEY` — football-data.org API key
-- `ODDS_API_KEY` — The Odds API key
-- `OPENAI_API_KEY` — OpenAI API key (for AI match reports)
+| Workflow | Command | Port | Type |
+|---|---|---|---|
+| Start Backend | `cd server && npm run dev` | 3001 | console |
+| Start application | `cd mobile && npm run start` | 5000 | webview |
 
-## Replit Configuration Changes
+## Screens
 
-- `frontend/package.json`: dev/start scripts now use `-p 5000 -H 0.0.0.0` for Replit compatibility
-- `frontend/next.config.mjs`: API rewrites proxy `/api/*` to backend at `localhost:8000`
+- **Dashboard** — Stats overview (matches, value bets, confidence) + match cards
+- **Matches** — All upcoming matches with filters (Group Stage / Knockout)  
+- **Value Bets** — Value bets sorted by Expected Value with Kelly stake
+- **Backtest** — Monthly ROI bar chart + performance metrics
+
+## iOS Testing
+
+Scan the QR code shown in the "Start application" workflow console with the **Expo Go** app on your iPhone to test on a real device.
+
+## Tech Stack
+
+- **Frontend:** React Native (Expo SDK 51), Expo Router, React Query, Reanimated
+- **Backend:** Node.js, Express, TypeScript, tsx
+- **Design:** Dark theme (#0B0F1A), green accent (#00E676)
+
+## Connecting Live Data
+
+To connect to the Python ML backend (future):
+1. Set `EXPO_PUBLIC_API_URL` to your deployed Python API URL
+2. The mobile app reads this env var for API requests
+
+## Missing Features (future work)
+
+- Real-time odds from football-data.org / The Odds API
+- User authentication and personal bankroll tracking
+- Push notifications for new value bets
+- In-play live match updates
+- Asian Handicap market support
