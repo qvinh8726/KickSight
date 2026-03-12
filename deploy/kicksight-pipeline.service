@@ -1,0 +1,26 @@
+[Unit]
+Description=KickSight Data Pipeline Daemon
+Documentation=https://github.com/qvinh8726/KickSight
+After=network-online.target postgresql.service kicksight.service
+Wants=network-online.target
+Requires=kicksight.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/kicksight
+ExecStart=/home/ubuntu/kicksight/.venv/bin/python /home/ubuntu/kicksight/scripts/auto_pipeline.py --daemon
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kicksight-pipeline
+
+# Graceful shutdown timeout
+TimeoutStopSec=30
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

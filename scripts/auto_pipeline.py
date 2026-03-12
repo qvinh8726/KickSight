@@ -15,6 +15,8 @@ import os
 import asyncio
 import argparse
 import logging
+import time
+import signal
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -233,20 +235,84 @@ def run_train():
         return False
 
 
+# ─── 5. Daemon mode — chạy liên tục như systemd service ──────────────────────
+ODDS_INTERVAL    = 30 * 60        # 30 phút
+MATCHES_INTERVAL = 6 * 3600      # 6 tiếng
+TRAIN_INTERVAL   = 7 * 24 * 3600  # 1 tuần
+
+_stop = asyncio.Event()
+
+def _handle_signal(sig, frame):
+    log.info(f"Signal {sig} received — shutting down gracefully...")
+    _stop.set()
+
+async def run_daemon():
+    log_sep("DAEMON STARTED")
+    log.info(f"  Odds every {ODDS_INTERVAL//60} min")
+    log.info(f"  Matches every {MATCHES_INTERVAL//3600} h")
+    log.info(f"  Training every {TRAIN_INTERVAL//86400} days")
+
+    signal.signal(signal.SIGTERM, _handle_signal)
+    signal.signal(signal.SIGINT,  _handle_signal)
+
+    # Chạy ngay lập tức lần đầu khi khởi động
+    log.info("Initial run on startup...")
+    await run_odds()
+    await run_matches()
+    run_predict()
+
+    last_matches = time.monotonic()
+    last_train   = time.monotonic()
+
+    while not _stop.is_set():
+        # Ngủ 1 phút, kiểm tra stop signal thường xuyên
+        for _ in range(ODDS_INTERVAL // 60):
+            if _stop.is_set():
+                break
+            await asyncio.sleep(60)
+
+        if _stop.is_set():
+            break
+
+        # Luôn fetch odds
+        await run_odds()
+
+        now = time.monotonic()
+
+        # Mỗi 6 tiếng: fetch matches + predict
+        if now - last_matches >= MATCHES_INTERVAL:
+            await run_matches()
+            run_predict()
+            last_matches = now
+
+        # Mỗi tuần: retrain
+        if now - last_train >= TRAIN_INTERVAL:
+            trained = run_train()
+            if trained:
+                run_predict()
+            last_train = now
+
+    log.info("Daemon stopped.")
+
+
 # ─── Main ──────────────────────────────────────────────────────────────────────
 async def main():
     parser = argparse.ArgumentParser(description="KickSight Auto Pipeline")
-    parser.add_argument("--odds",    action="store_true", help="Fetch odds only (every 30min)")
-    parser.add_argument("--matches", action="store_true", help="Fetch match data (every 6h)")
-    parser.add_argument("--predict", action="store_true", help="Generate predictions (every 6h)")
-    parser.add_argument("--train",   action="store_true", help="Retrain ML models (weekly)")
-    parser.add_argument("--full",    action="store_true", help="Full pipeline (daily)")
+    parser.add_argument("--odds",    action="store_true", help="Fetch odds only (30min task)")
+    parser.add_argument("--matches", action="store_true", help="Fetch match data (6h task)")
+    parser.add_argument("--predict", action="store_true", help="Generate predictions")
+    parser.add_argument("--train",   action="store_true", help="Retrain ML models (weekly task)")
+    parser.add_argument("--full",    action="store_true", help="Full pipeline (daily task)")
+    parser.add_argument("--daemon",  action="store_true", help="Chạy liên tục như service")
     args = parser.parse_args()
 
     start = datetime.now()
     log.info(f"Pipeline started at {start.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    if args.odds:
+    if args.daemon:
+        await run_daemon()
+
+    elif args.odds:
         await run_odds()
 
     elif args.matches:
@@ -271,8 +337,9 @@ async def main():
     else:
         parser.print_help()
 
-    elapsed = (datetime.now() - start).total_seconds()
-    log.info(f"Pipeline finished in {elapsed:.1f}s")
+    if not args.daemon:
+        elapsed = (datetime.now() - start).total_seconds()
+        log.info(f"Pipeline finished in {elapsed:.1f}s")
 
 
 if __name__ == "__main__":
