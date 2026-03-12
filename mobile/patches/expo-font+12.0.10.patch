@@ -1,0 +1,13 @@
+diff --git a/node_modules/expo-font/build/ExpoFontLoader.web.js b/node_modules/expo-font/build/ExpoFontLoader.web.js
+index 8230cd1..29f3376 100644
+--- a/node_modules/expo-font/build/ExpoFontLoader.web.js
++++ b/node_modules/expo-font/build/ExpoFontLoader.web.js
+@@ -124,7 +124,7 @@ export default {
+         if (!isFontLoadingListenerSupported()) {
+             return Promise.resolve();
+         }
+-        return new FontObserver(fontFamilyName, { display: resource.display }).load(null, 6000);
++        return new FontObserver(fontFamilyName, { display: resource.display }).load(null, 30000).catch((err) => { if (err?.message?.includes('timeout exceeded')) { console.warn('[expo-font] Font "' + fontFamilyName + '" load timed out, continuing with fallback'); return; } throw err; });
+     },
+ };
+ const ID = 'expo-generated-fonts';
