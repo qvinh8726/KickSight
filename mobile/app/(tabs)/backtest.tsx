@@ -83,7 +83,7 @@ export default function BacktestScreen() {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: topPad, backgroundColor: colors.background }]}>
+    <View style={[styles.root, { paddingTop: topPad, backgroundColor: colors.bg }]}>
       <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
         <View style={styles.titleRow}>
           <View style={[styles.titleIconBg, { backgroundColor: "#A78BFA15" }]}>

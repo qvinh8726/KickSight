@@ -90,3 +90,57 @@ export interface BacktestData {
   summary: BacktestSummary;
   monthly: MonthlyResult[];
 }
+
+export interface LiveMatch {
+  id: string;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+  date: string;
+  time: string;
+  venue: string;
+  league: string;
+  league_key: string;
+  status: "scheduled" | "finished";
+  round: string;
+  home_badge: string | null;
+  away_badge: string | null;
+  thumb: string | null;
+  timestamp: string;
+}
+
+export interface LeagueInfo {
+  key: string;
+  id: string;
+  name: string;
+  country: string;
+  badge: string;
+  season: string;
+}
+
+export interface AllMatchesData {
+  leagues: LeagueInfo[];
+  upcoming: LiveMatch[];
+  results: LiveMatch[];
+}
+
+export interface StandingEntry {
+  rank: number;
+  team: string;
+  badge: string | null;
+  played: number;
+  win: number;
+  draw: number;
+  loss: number;
+  goals_for: number;
+  goals_against: number;
+  goal_diff: number;
+  points: number;
+  form: string;
+}
+
+export interface StandingsData {
+  league: LeagueInfo;
+  standings: StandingEntry[];
+}

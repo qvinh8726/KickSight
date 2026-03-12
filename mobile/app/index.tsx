@@ -19,7 +19,7 @@ export default function Index() {
   }, [isAuthenticated, isLoading]);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
       <ActivityIndicator size="large" color={colors.accent} />
     </View>
   );

@@ -78,9 +78,11 @@ PostgreSQL (Replit built-in) with tables:
 - `DELETE /api/predictions/:id` — Delete a prediction
 - `GET /api/predictions/stats` — Prediction stats (total, this week)
 
-### Live Football
-- `GET /api/football/leagues` — Available leagues
-- `GET /api/football/live-matches?league=epl` — Upcoming & recent results
+### Live Football (Real Data)
+- `GET /api/football/leagues` — Available leagues (EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL)
+- `GET /api/football/all-matches` — All upcoming & recent results from all leagues with team badges
+- `GET /api/football/live-matches?league=epl` — Upcoming & recent results for a specific league
+- `GET /api/football/standings?league=epl` — League standings/table with form, goals, points
 - `GET /api/football/team/:name` — Team info
 
 ### AI Analysis
@@ -89,8 +91,8 @@ PostgreSQL (Replit built-in) with tables:
 ## Screens
 
 - **Login/Register** — Email+password auth with Google Sign-In (theme-aware)
-- **Dashboard** — Animated stats counters + match prediction cards + notification badge
-- **Matches** — WC2026 matches with Group Stage / Knockout filters
+- **Dashboard** — Animated stats + real recent results & upcoming matches + WC2026 predictions
+- **Matches** — Real live matches from 6 leagues with Upcoming/Results/Standings views, team badges, league filter
 - **Value Bets** — AI-detected betting opportunities with Kelly stakes
 - **History** — Saved predictions list with stats, delete support
 - **Notifications** — In-app notification center (match alerts, results, value bets, system)

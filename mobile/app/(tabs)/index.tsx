@@ -9,6 +9,7 @@ import {
   Animated,
   RefreshControl,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,7 +20,7 @@ import { apiRequest, queryClient } from "@/lib/query-client";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { useNotifications } from "@/lib/notifications-context";
-import type { DashboardData } from "@/lib/types";
+import type { DashboardData, AllMatchesData, LiveMatch } from "@/lib/types";
 
 function AnimatedCounter({ value, suffix = "", color }: { value: number; suffix?: string; color?: string }) {
   const animVal = useRef(new Animated.Value(0)).current;
@@ -35,6 +36,50 @@ function AnimatedCounter({ value, suffix = "", color }: { value: number; suffix?
   }, [value]);
 
   return <Text style={[styles.statValue, color ? { color } : undefined]}>{display}{suffix}</Text>;
+}
+
+function fmtTime(t: string) {
+  if (!t || t === "TBD") return "TBD";
+  const parts = t.split(":");
+  if (parts.length < 2) return t;
+  const h = parseInt(parts[0]);
+  const m = parts[1];
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+}
+
+function TeamBadge({ uri, size = 20 }: { uri: string | null; size?: number }) {
+  if (!uri) return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#1C254040" }} />;
+  return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: 3 }} resizeMode="contain" />;
+}
+
+function LiveMatchMini({ match, colors }: { match: LiveMatch; colors: any }) {
+  const isFinished = match.status === "finished";
+  return (
+    <View style={[styles.liveCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.liveLeagueRow}>
+        <Text style={[styles.liveLeague, { color: colors.textMuted }]} numberOfLines={1}>{match.league}</Text>
+        {isFinished ? (
+          <View style={[styles.ftBadge, { backgroundColor: colors.textMuted + "20" }]}>
+            <Text style={[styles.ftText, { color: colors.textMuted }]}>FT</Text>
+          </View>
+        ) : (
+          <Text style={[styles.liveTime, { color: colors.accent }]}>{fmtTime(match.time)}</Text>
+        )}
+      </View>
+      <View style={styles.liveTeamRow}>
+        <TeamBadge uri={match.home_badge} size={18} />
+        <Text style={[styles.liveTeamName, { color: colors.text }]} numberOfLines={1}>{match.home_team}</Text>
+        {isFinished && <Text style={[styles.liveScore, { color: colors.text }]}>{match.home_score}</Text>}
+      </View>
+      <View style={styles.liveTeamRow}>
+        <TeamBadge uri={match.away_badge} size={18} />
+        <Text style={[styles.liveTeamName, { color: colors.text }]} numberOfLines={1}>{match.away_team}</Text>
+        {isFinished && <Text style={[styles.liveScore, { color: colors.text }]}>{match.away_score}</Text>}
+      </View>
+    </View>
+  );
 }
 
 export default function DashboardScreen() {
@@ -56,6 +101,11 @@ export default function DashboardScreen() {
     queryFn: () => apiRequest<DashboardData>("/api/dashboard"),
   });
 
+  const { data: liveData } = useQuery<AllMatchesData>({
+    queryKey: ["/api/football/all-matches"],
+    queryFn: () => apiRequest<AllMatchesData>("/api/football/all-matches"),
+  });
+
   useEffect(() => {
     Animated.stagger(100, [
       Animated.parallel([
@@ -69,7 +119,10 @@ export default function DashboardScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ["/api/football/all-matches"] }),
+    ]);
     setRefreshing(false);
   };
 
@@ -79,6 +132,9 @@ export default function DashboardScreen() {
     if (h < 18) return "Good afternoon";
     return "Good evening";
   };
+
+  const recentResults = (liveData?.results ?? []).slice(0, 4);
+  const upcomingLive = (liveData?.upcoming ?? []).slice(0, 4);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: topPad }]}>
@@ -163,17 +219,61 @@ export default function DashboardScreen() {
               <Ionicons name="hardware-chip-outline" size={14} color={colors.accent} />
               <Text style={[styles.modelText, { color: colors.text }]}>{data.stats.model}</Text>
               <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
-              <Text style={[styles.liveText, { color: colors.accent }]}>Live</Text>
+              <Text style={[styles.liveTextBadge, { color: colors.accent }]}>Live</Text>
             </View>
-
-            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>WC2026 PREDICTIONS</Text>
-
-            <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: cardsSlide }] }}>
-              {data.matches.map((m, i) => (
-                <MatchCard key={m.match.id} data={m} index={i} />
-              ))}
-            </Animated.View>
           </>
+        )}
+
+        {recentResults.length > 0 && (
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: cardsSlide }] }}>
+            <View style={styles.sectionRow}>
+              <View style={styles.sectionLeft}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>RECENT RESULTS</Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/matches")}>
+                <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
+              {recentResults.map((m) => (
+                <LiveMatchMini key={m.id} match={m} colors={colors} />
+              ))}
+            </ScrollView>
+          </Animated.View>
+        )}
+
+        {upcomingLive.length > 0 && (
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: cardsSlide }], marginTop: 16 }}>
+            <View style={styles.sectionRow}>
+              <View style={styles.sectionLeft}>
+                <Ionicons name="time-outline" size={16} color={colors.accent} />
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>UPCOMING MATCHES</Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/matches")}>
+                <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
+              {upcomingLive.map((m) => (
+                <LiveMatchMini key={m.id} match={m} colors={colors} />
+              ))}
+            </ScrollView>
+          </Animated.View>
+        )}
+
+        {data && (
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: cardsSlide }], marginTop: 16 }}>
+            <View style={styles.sectionRow}>
+              <View style={styles.sectionLeft}>
+                <Ionicons name="analytics" size={16} color={colors.accent} />
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>WC2026 PREDICTIONS</Text>
+              </View>
+            </View>
+            {data.matches.map((m, i) => (
+              <MatchCard key={m.match.id} data={m} index={i} />
+            ))}
+          </Animated.View>
         )}
 
         <View style={{ height: 20 }} />
@@ -276,11 +376,23 @@ const styles = StyleSheet.create({
   },
   modelText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   liveDot: { width: 6, height: 6, borderRadius: 3, marginLeft: 4 },
-  liveText: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  liveTextBadge: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  sectionRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  sectionLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
   sectionLabel: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
     letterSpacing: 1,
-    marginBottom: 12,
   },
+  seeAll: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+
+  liveCard: { width: 200, borderRadius: 12, padding: 10, borderWidth: 1 },
+  liveLeagueRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
+  liveLeague: { fontSize: 9, fontFamily: "Inter_500Medium", flex: 1, marginRight: 4 },
+  liveTime: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  ftBadge: { borderRadius: 3, paddingHorizontal: 5, paddingVertical: 1 },
+  ftText: { fontSize: 9, fontFamily: "Inter_700Bold" },
+  liveTeamRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  liveTeamName: { flex: 1, fontSize: 12, fontFamily: "Inter_500Medium" },
+  liveScore: { fontSize: 14, fontFamily: "Inter_700Bold", width: 20, textAlign: "center" },
 });
