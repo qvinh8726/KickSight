@@ -11,6 +11,7 @@ interface User {
   passwordHash: string;
   createdAt: string;
   avatar?: string;
+  googleId?: string;
 }
 
 const users = new Map<string, User>();
@@ -69,6 +70,60 @@ router.post("/login", async (req: Request, res: Response) => {
     });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
+  }
+});
+
+router.post("/google", async (req: Request, res: Response) => {
+  try {
+    const { accessToken, userInfo, idToken } = req.body;
+    let email: string;
+    let name: string;
+    let googleId: string;
+
+    if (accessToken) {
+      const googleRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!googleRes.ok) {
+        return res.status(401).json({ error: "Invalid Google access token" });
+      }
+      const googleUser = await googleRes.json() as any;
+      email = googleUser.email;
+      name = googleUser.name || googleUser.given_name || email.split("@")[0];
+      googleId = googleUser.id;
+    } else if (idToken) {
+      const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      if (!googleRes.ok) {
+        return res.status(401).json({ error: "Invalid Google token" });
+      }
+      const googleUser = await googleRes.json() as any;
+      email = googleUser.email;
+      name = googleUser.name || googleUser.given_name || email.split("@")[0];
+      googleId = googleUser.sub;
+    } else {
+      return res.status(400).json({ error: "Google token is required" });
+    }
+
+    let user = Array.from(users.values()).find((u) => u.email === email);
+    if (!user) {
+      const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      user = {
+        id,
+        name,
+        email,
+        passwordHash: "",
+        createdAt: new Date().toISOString(),
+        googleId,
+      };
+      users.set(id, user);
+    }
+    const token = generateToken({ id: user.id, email: user.email });
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt },
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Google authentication failed" });
   }
 });
 

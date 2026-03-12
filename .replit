@@ -57,3 +57,4 @@ externalPort = 80
 
 [userenv.shared]
 GOOGLE_CLIENT_ID = "1096780671141-s176tiftlpmg34hb91388536tm3ghr7c.apps.googleusercontent.com"
+EXPO_PUBLIC_GOOGLE_CLIENT_ID = "1096780671141-s176tiftlpmg34hb91388536tm3ghr7c.apps.googleusercontent.com"

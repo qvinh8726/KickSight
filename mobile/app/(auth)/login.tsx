@@ -10,19 +10,23 @@ import {
   ScrollView,
   ActivityIndicator,
   Animated,
-  Alert,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth-context";
+import { API_URL } from "@/lib/query-client";
+
+const GOOGLE_CLIENT_ID = "1096780671141-s176tiftlpmg34hb91388536tm3ghr7c.apps.googleusercontent.com";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -36,6 +40,43 @@ export default function LoginScreen() {
       Animated.spring(logoScale, { toValue: 1, tension: 60, friction: 6, useNativeDriver: true }),
     ]).start();
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const hash = window.location.hash;
+      if (hash && hash.includes("access_token=")) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get("access_token");
+        const returnedState = params.get("state");
+        const savedState = sessionStorage.getItem("google_oauth_state");
+        sessionStorage.removeItem("google_oauth_state");
+        if (accessToken && returnedState && returnedState === savedState) {
+          window.history.replaceState(null, "", window.location.pathname);
+          handleGoogleAccessToken(accessToken);
+        } else if (accessToken && !savedState) {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }
+    }
+  }, []);
+
+  const handleGoogleAccessToken = async (accessToken: string) => {
+    setGoogleLoading(true);
+    setError("");
+    try {
+      const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!userInfoRes.ok) throw new Error("Failed to get Google user info");
+      const userInfo = await userInfoRes.json();
+      await loginWithGoogle(accessToken, userInfo);
+      router.replace("/(tabs)");
+    } catch (err: any) {
+      setError(err.message || "Google login failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -51,6 +92,32 @@ export default function LoginScreen() {
       setError(err.message || "Login failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGooglePress = () => {
+    setError("");
+    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const redirectUri = Platform.OS === "web"
+      ? window.location.origin + window.location.pathname
+      : `${API_URL}/api/auth/google/callback`;
+
+    if (Platform.OS === "web") {
+      sessionStorage.setItem("google_oauth_state", state);
+    }
+
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=token` +
+      `&scope=${encodeURIComponent("openid profile email")}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&prompt=select_account`;
+
+    if (Platform.OS === "web") {
+      window.location.href = googleAuthUrl;
+    } else {
+      Linking.openURL(googleAuthUrl);
     }
   };
 
@@ -138,11 +205,19 @@ export default function LoginScreen() {
 
             <View style={styles.socialRow}>
               <TouchableOpacity
-                style={styles.socialBtn}
-                onPress={() => Alert.alert("Google Sign-In", "Configure your Google OAuth Client ID to enable this feature.")}
+                style={[styles.socialBtn, googleLoading && styles.loginBtnDisabled]}
+                onPress={handleGooglePress}
+                disabled={googleLoading}
+                activeOpacity={0.7}
               >
-                <Ionicons name="logo-google" size={20} color="#FFFFFF" />
-                <Text style={styles.socialBtnText}>Sign in with Google</Text>
+                {googleLoading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-google" size={20} color="#FFFFFF" />
+                    <Text style={styles.socialBtnText}>Sign in with Google</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
 
