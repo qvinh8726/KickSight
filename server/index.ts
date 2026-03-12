@@ -3,6 +3,7 @@ import cors from "cors";
 import { DEMO_MATCHES, BACKTEST_RESULTS } from "./data/demo";
 import authRoutes from "./routes/auth";
 import footballRoutes from "./routes/football";
+import predictionsRoutes from "./routes/predictions";
 import { analyzeMatch } from "./lib/analysis";
 
 const app = express();
@@ -17,6 +18,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/football", footballRoutes);
+app.use("/api/predictions", predictionsRoutes);
 
 app.get("/api/analysis/:homeTeam/:awayTeam", (req, res) => {
   const { homeTeam, awayTeam } = req.params;

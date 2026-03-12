@@ -1,7 +1,9 @@
-import React, { useRef, useEffect } from "react";
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from "react-native";
+import React, { useRef, useEffect, useState } from "react";
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ProbabilityBar from "./ProbabilityBar";
+import { apiRequest } from "@/lib/query-client";
 import type { DashboardMatch } from "@/lib/types";
 
 interface Props {
@@ -20,6 +22,43 @@ export default function MatchCard({ data, index = 0 }: Props) {
   const { match, prediction, value_bets, fair_odds_home, fair_odds_draw, fair_odds_away, odds } = data;
   const hasValue = value_bets.length > 0;
   const bookOdds = odds[0];
+  const [saved, setSaved] = useState(false);
+  const qc = useQueryClient();
+
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const bestOutcome = prediction.prob_home > prediction.prob_away
+        ? (prediction.prob_home > prediction.prob_draw ? "home" : "draw")
+        : (prediction.prob_away > prediction.prob_draw ? "away" : "draw");
+      return apiRequest("/api/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          homeTeam: match.home_team,
+          awayTeam: match.away_team,
+          competition: match.competition_stage || "WC2026",
+          predictedOutcome: bestOutcome,
+          confidence: Math.round(prediction.confidence * 100),
+          homeWinProb: Math.round(prediction.prob_home * 100),
+          drawProb: Math.round(prediction.prob_draw * 100),
+          awayWinProb: Math.round(prediction.prob_away * 100),
+          notes: `Score: ${prediction.projected_scoreline}. Fair odds: H${fair_odds_home.toFixed(2)} D${fair_odds_draw.toFixed(2)} A${fair_odds_away.toFixed(2)}`,
+        }),
+      });
+    },
+    onSuccess: () => {
+      setSaved(true);
+      qc.invalidateQueries({ queryKey: ["/api/predictions"] });
+      qc.invalidateQueries({ queryKey: ["/api/predictions/stats"] });
+    },
+    onError: () => {
+      if (Platform.OS === "web") {
+        alert("Failed to save prediction. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to save prediction. Please try again.");
+      }
+    },
+  });
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -110,11 +149,22 @@ export default function MatchCard({ data, index = 0 }: Props) {
           </View>
           <Text style={styles.confidence}>{Math.round(prediction.confidence * 100)}%</Text>
         </View>
-        {bookOdds && (
-          <View style={styles.bookBadge}>
-            <Text style={styles.bookName}>{bookOdds.bookmaker}</Text>
-          </View>
-        )}
+        <View style={{ flexDirection: "row", gap: 6 }}>
+          <TouchableOpacity
+            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
+            onPress={() => !saved && saveMutation.mutate()}
+            disabled={saved || saveMutation.isPending}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={saved ? "checkmark" : "bookmark-outline"} size={12} color={saved ? "#0B0F1A" : "#00E676"} />
+            <Text style={[styles.saveBtnText, saved && styles.saveBtnTextSaved]}>{saved ? "Saved" : "Save"}</Text>
+          </TouchableOpacity>
+          {bookOdds && (
+            <View style={styles.bookBadge}>
+              <Text style={styles.bookName}>{bookOdds.bookmaker}</Text>
+            </View>
+          )}
+        </View>
       </View>
     </Animated.View>
   );
@@ -256,4 +306,16 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   bookName: { fontSize: 10, color: "#8892A4", fontFamily: "Inter_500Medium" },
+  saveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#00E67618",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  saveBtnSaved: { backgroundColor: "#00E676" },
+  saveBtnText: { fontSize: 10, color: "#00E676", fontFamily: "Inter_600SemiBold" },
+  saveBtnTextSaved: { color: "#0B0F1A" },
 });

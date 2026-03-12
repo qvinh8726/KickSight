@@ -67,6 +67,12 @@ PostgreSQL (Replit built-in) with tables:
 - `GET /api/value-bets` — Value bets sorted by EV
 - `GET /api/backtest` — Historical performance data
 
+### User Predictions
+- `GET /api/predictions` — List user's saved predictions
+- `POST /api/predictions` — Save a new prediction
+- `DELETE /api/predictions/:id` — Delete a prediction
+- `GET /api/predictions/stats` — Prediction stats (total, this week)
+
 ### Live Football
 - `GET /api/football/leagues` — Available leagues
 - `GET /api/football/live-matches?league=epl` — Upcoming & recent results
@@ -81,7 +87,8 @@ PostgreSQL (Replit built-in) with tables:
 - **Dashboard** — Animated stats counters + match prediction cards
 - **Matches** — WC2026 matches with Group Stage / Knockout filters
 - **Value Bets** — AI-detected betting opportunities with Kelly stakes
-- **Backtest** — Monthly ROI chart + Sharpe ratio + performance metrics
+- **History** — Saved predictions list with stats, delete support
+- **Backtest** — Monthly ROI chart + Sharpe ratio + performance metrics (hidden from tab bar)
 - **Profile** — User info, settings, sign out
 
 ## Tech Stack
