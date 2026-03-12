@@ -56,11 +56,18 @@ function TeamBadge({ uri, size = 20 }: { uri: string | null; size?: number }) {
 
 function LiveMatchMini({ match, colors }: { match: LiveMatch; colors: any }) {
   const isFinished = match.status === "finished";
+  const isLive = match.status === "live";
+  const hasScore = isFinished || isLive;
   return (
-    <View style={[styles.liveCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[styles.liveCard, { backgroundColor: colors.card, borderColor: isLive ? "#FF5252" : colors.border }]}>
       <View style={styles.liveLeagueRow}>
         <Text style={[styles.liveLeague, { color: colors.textMuted }]} numberOfLines={1}>{match.league}</Text>
-        {isFinished ? (
+        {isLive ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "#FF525220", borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 }}>
+            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: "#FF5252" }} />
+            <Text style={{ fontSize: 8, fontFamily: "Inter_700Bold", color: "#FF5252" }}>LIVE</Text>
+          </View>
+        ) : isFinished ? (
           <View style={[styles.ftBadge, { backgroundColor: colors.textMuted + "20" }]}>
             <Text style={[styles.ftText, { color: colors.textMuted }]}>FT</Text>
           </View>
@@ -71,12 +78,12 @@ function LiveMatchMini({ match, colors }: { match: LiveMatch; colors: any }) {
       <View style={styles.liveTeamRow}>
         <TeamBadge uri={match.home_badge} size={18} />
         <Text style={[styles.liveTeamName, { color: colors.text }]} numberOfLines={1}>{match.home_team}</Text>
-        {isFinished && <Text style={[styles.liveScore, { color: colors.text }]}>{match.home_score}</Text>}
+        {hasScore && <Text style={[styles.liveScore, { color: colors.text }]}>{match.home_score}</Text>}
       </View>
       <View style={styles.liveTeamRow}>
         <TeamBadge uri={match.away_badge} size={18} />
         <Text style={[styles.liveTeamName, { color: colors.text }]} numberOfLines={1}>{match.away_team}</Text>
-        {isFinished && <Text style={[styles.liveScore, { color: colors.text }]}>{match.away_score}</Text>}
+        {hasScore && <Text style={[styles.liveScore, { color: colors.text }]}>{match.away_score}</Text>}
       </View>
     </View>
   );
