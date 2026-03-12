@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Platform } from "react-native";
-import { API_URL, setAuthToken } from "./query-client";
+import { API_URL, setAuthToken, queryClient } from "./query-client";
 
 interface User {
   id: string;
@@ -77,23 +77,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const savedToken = await getFromStorage(STORAGE_KEY);
         if (savedToken) {
-          const res = await fetch(`${API_URL}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${savedToken}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            setToken(savedToken);
-            setAuthToken(savedToken);
-            setUser(data.user);
-          } else {
-            await removeFromStorage(STORAGE_KEY);
-            await removeFromStorage(USER_KEY);
+          // Optimistically restore cached user first for faster startup
+          const savedUser = await getFromStorage(USER_KEY);
+          if (savedUser) {
+            try {
+              const parsed = JSON.parse(savedUser);
+              setToken(savedToken);
+              setAuthToken(savedToken);
+              setUser(parsed);
+            } catch {}
+          }
+
+          // Then validate token with server
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+            const res = await fetch(`${API_URL}/api/auth/me`, {
+              headers: { Authorization: `Bearer ${savedToken}` },
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            if (res.ok) {
+              const data = await res.json();
+              setToken(savedToken);
+              setAuthToken(savedToken);
+              setUser(data.user);
+              await saveToStorage(USER_KEY, JSON.stringify(data.user));
+            } else if (res.status === 401) {
+              // Token expired or invalid — force logout
+              setToken(null);
+              setAuthToken(null);
+              setUser(null);
+              await removeFromStorage(STORAGE_KEY);
+              await removeFromStorage(USER_KEY);
+            }
+          } catch {
+            // Network error — keep cached user, don't force logout
           }
         }
-      } catch {
-        await removeFromStorage(STORAGE_KEY);
-        await removeFromStorage(USER_KEY);
-      }
+      } catch {}
       setIsLoading(false);
     })();
   }, []);
@@ -147,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setAuthToken(null);
     setUser(null);
+    queryClient.clear();
     removeFromStorage(STORAGE_KEY);
     removeFromStorage(USER_KEY);
   }, []);

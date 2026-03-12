@@ -1,9 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
-const JWT_SECRET = process.env.JWT_SECRET || "kicksight-dev-secret";
+const isProduction = process.env.NODE_ENV === "production";
+const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? "" : `dev-${crypto.randomBytes(32).toString("hex")}`);
+
+if (isProduction && !process.env.JWT_SECRET) {
+  console.error("[AUTH] FATAL: JWT_SECRET is required in production. Exiting.");
+  process.exit(1);
+}
 if (!process.env.JWT_SECRET) {
-  console.warn("[AUTH] WARNING: Using default JWT secret. Set JWT_SECRET env var for production.");
+  console.warn("[AUTH] Using auto-generated JWT secret (dev only). Set JWT_SECRET for persistence across restarts.");
 }
 
 export interface AuthRequest extends Request {

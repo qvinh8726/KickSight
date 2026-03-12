@@ -9,6 +9,8 @@ import {
   Animated,
   Switch,
   Modal,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { useI18n, LANGUAGES } from "@/lib/i18n";
 import { useRouter } from "expo-router";
+import { apiRequest } from "@/lib/query-client";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -46,6 +49,39 @@ export default function ProfileScreen() {
     setIsPro(true);
     try { localStorage.setItem("kicksight_plan", "pro"); } catch {}
     setShowUpgradeModal(false);
+  };
+
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const handleDeleteAccount = () => {
+    const doDelete = async () => {
+      setDeletingAccount(true);
+      try {
+        await apiRequest("/api/auth/account", { method: "DELETE" });
+        logout();
+        router.replace("/(auth)/login");
+      } catch (err: any) {
+        const msg = err.message || "Failed to delete account";
+        if (Platform.OS === "web") window.alert(msg);
+        else Alert.alert("Error", msg);
+      } finally {
+        setDeletingAccount(false);
+      }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm("Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted.")) {
+        doDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Account",
+        "Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: doDelete },
+        ],
+      );
+    }
   };
 
   const currentLang = LANGUAGES.find(l => l.code === language);
@@ -135,11 +171,27 @@ export default function ProfileScreen() {
 
           <MenuItem icon="information-circle-outline" label={t.version} value="2.0.0" colors={colors} />
           <MenuItem icon="document-text-outline" label={t.termsOfService} colors={colors} />
-          <MenuItem icon="shield-outline" label={t.privacyPolicy} colors={colors} />
+          <MenuItem icon="shield-outline" label={t.privacyPolicy} colors={colors} onPress={() => router.push("/privacy-policy")} />
 
           <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: colors.dangerBg, borderColor: colors.dangerBorder }]} onPress={handleLogout} activeOpacity={0.7}>
             <Ionicons name="log-out-outline" size={20} color={colors.danger} />
             <Text style={[styles.logoutText, { color: colors.danger }]}>{t.signOut}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.deleteAccountBtn, { borderColor: colors.dangerBorder }]}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+            disabled={deletingAccount}
+          >
+            {deletingAccount ? (
+              <ActivityIndicator size="small" color={colors.danger} />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={20} color={colors.danger} />
+                <Text style={[styles.logoutText, { color: colors.danger }]}>Delete Account</Text>
+              </>
+            )}
           </TouchableOpacity>
         </Animated.View>
 
@@ -230,9 +282,9 @@ export default function ProfileScreen() {
   );
 }
 
-function MenuItem({ icon, label, value, colors }: { icon: any; label: string; value?: string; colors: any }) {
+function MenuItem({ icon, label, value, colors, onPress }: { icon: any; label: string; value?: string; colors: any; onPress?: () => void }) {
   return (
-    <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.6}>
+    <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.6} onPress={onPress}>
       <Ionicons name={icon} size={20} color={colors.textSecondary} />
       <Text style={[styles.menuLabel, { color: colors.text }]}>{label}</Text>
       {value && <Text style={[styles.menuValue, { color: colors.textMuted }]}>{value}</Text>}
@@ -279,6 +331,11 @@ const styles = StyleSheet.create({
     borderRadius: 12, padding: 14, gap: 8, marginTop: 20, borderWidth: 1,
   },
   logoutText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  deleteAccountBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    borderRadius: 12, padding: 14, gap: 8, marginTop: 8, borderWidth: 1,
+    backgroundColor: "transparent",
+  },
 
   modalOverlay: {
     flex: 1,

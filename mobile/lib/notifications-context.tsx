@@ -1,5 +1,16 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { Platform } from "react-native";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { Platform, AppState } from "react-native";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 export interface AppNotification {
   id: string;
@@ -14,6 +25,7 @@ export interface AppNotification {
 interface NotifState {
   notifications: AppNotification[];
   unreadCount: number;
+  expoPushToken: string | null;
   addNotification: (n: Omit<AppNotification, "id" | "timestamp" | "read">) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
@@ -26,6 +38,7 @@ const CLEARED_KEY = "kicksight_notifications_cleared";
 const NotifContext = createContext<NotifState>({
   notifications: [],
   unreadCount: 0,
+  expoPushToken: null,
   addNotification: () => {},
   markAsRead: () => {},
   markAllAsRead: () => {},
@@ -73,27 +86,78 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       read: i > 1,
     }));
   });
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
 
   useEffect(() => {
     saveNotifications(notifications);
   }, [notifications]);
 
+  // Register push notifications on native platforms
   useEffect(() => {
-    const interval = setInterval(() => {
-      const matchMessages = [
-        { title: "Match Alert", message: "USA vs Mexico starts in 30 minutes!" },
-        { title: "Live Update", message: "Japan vs South Korea - Halftime: 1-1" },
-        { title: "Goal!", message: "France scores! France 1 - 0 Portugal" },
-        { title: "New Value Bet", message: "Edge detected: Netherlands vs Italy - Draw" },
-      ];
-      const random = matchMessages[Math.floor(Math.random() * matchMessages.length)];
+    if (Platform.OS === "web") return;
+
+    async function registerForPushNotifications() {
+      if (!Device.isDevice) {
+        console.log("[PUSH] Must use physical device for push notifications");
+        return;
+      }
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== "granted") {
+        console.log("[PUSH] Permission not granted");
+        return;
+      }
+
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+          projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+        });
+        setExpoPushToken(tokenData.data);
+        console.log("[PUSH] Token:", tokenData.data);
+      } catch (err) {
+        console.log("[PUSH] Token error:", err);
+      }
+
+      if (Platform.OS === "android") {
+        Notifications.setNotificationChannelAsync("default", {
+          name: "Default",
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#00E676",
+        });
+      }
+    }
+
+    registerForPushNotifications();
+
+    // Listen for incoming notifications
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      const { title, body, data } = notification.request.content;
       addNotification({
-        type: random.title.includes("Value") ? "value_bet" : "match",
-        title: random.title,
-        message: random.message,
+        type: (data?.type as any) || "system",
+        title: title || "KickSight",
+        message: body || "",
+        data,
       });
-    }, 300000);
-    return () => clearInterval(interval);
+    });
+
+    // Listen for notification taps
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const { data } = response.notification.request.content;
+      console.log("[PUSH] Tapped notification:", data);
+    });
+
+    return () => {
+      if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
+      if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
+    };
   }, []);
 
   const addNotification = useCallback((n: Omit<AppNotification, "id" | "timestamp" | "read">) => {
@@ -124,10 +188,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = React.useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
   return (
-    <NotifContext.Provider value={{ notifications, unreadCount, addNotification, markAsRead, markAllAsRead, clearAll }}>
+    <NotifContext.Provider value={{ notifications, unreadCount, expoPushToken, addNotification, markAsRead, markAllAsRead, clearAll }}>
       {children}
     </NotifContext.Provider>
   );

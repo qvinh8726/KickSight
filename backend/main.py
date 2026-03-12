@@ -33,10 +33,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Football Betting AI - World Cup 2026",
+    title="KickSight - Football Betting AI",
     description=(
-        "Production-ready football betting analysis system. "
-        "Predicts match probabilities, detects value bets, and generates AI reports. "
+        "KickSight predicts match probabilities, detects value bets, "
+        "and generates AI reports for the 2026 FIFA World Cup. "
         "Predictions are probability-based estimates, not profit guarantees."
     ),
     version="1.0.0",

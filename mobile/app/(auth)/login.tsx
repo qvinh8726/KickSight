@@ -19,7 +19,7 @@ import { useTheme } from "@/lib/theme-context";
 import { useI18n } from "@/lib/i18n";
 import { API_URL } from "@/lib/query-client";
 
-const GOOGLE_CLIENT_ID = "1096780671141-s176tiftlpmg34hb91388536tm3ghr7c.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 export default function LoginScreen() {
   const router = useRouter();

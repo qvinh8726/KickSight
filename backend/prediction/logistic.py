@@ -32,7 +32,6 @@ class LogisticBaseline:
         X_scaled = self.scaler.fit_transform(X)
 
         base_model = LogisticRegression(
-            multi_class="multinomial",
             solver="lbfgs",
             max_iter=1000,
             C=1.0,

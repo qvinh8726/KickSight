@@ -11,6 +11,8 @@ from backend.data.loaders import CSVLoader, JSONLoader
 
 router = APIRouter(prefix="/api/data", tags=["data"])
 
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+
 
 @router.post("/ingest/competition")
 async def ingest_competition(competition_id: int, season: int):
@@ -38,8 +40,11 @@ async def upload_csv(file: UploadFile = File(...)):
     if not file.filename or not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="File must be a CSV")
 
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail=f"File too large (max {MAX_UPLOAD_SIZE // 1024 // 1024}MB)")
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
-        content = await file.read()
         tmp.write(content)
         tmp_path = tmp.name
 
@@ -56,8 +61,11 @@ async def upload_json(file: UploadFile = File(...)):
     if not file.filename or not file.filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="File must be JSON")
 
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail=f"File too large (max {MAX_UPLOAD_SIZE // 1024 // 1024}MB)")
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
-        content = await file.read()
         tmp.write(content)
         tmp_path = tmp.name
 

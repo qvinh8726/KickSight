@@ -91,6 +91,11 @@ function loadTheme(): ThemeMode {
 function saveTheme(mode: ThemeMode) {
   if (Platform.OS === "web") {
     try { localStorage.setItem(THEME_KEY, mode); } catch {}
+  } else {
+    try {
+      const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+      AsyncStorage.setItem(THEME_KEY, mode);
+    } catch {}
   }
 }
 

@@ -18,4 +18,11 @@ venv/
 .idea/
 .vscode/
 *.swp
+
+# Copilot skills cache
+.local/
+
+# Logs
+*.log
+server.runtime.*.log
 *.swo

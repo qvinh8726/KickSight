@@ -18,8 +18,21 @@ interface CacheEntry {
   timestamp: number;
 }
 
+const MAX_CACHE_SIZE = 200;
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL = 5 * 60 * 1000;
+
+function evictStaleCache() {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (now - entry.timestamp > CACHE_TTL) cache.delete(key);
+  }
+  if (cache.size > MAX_CACHE_SIZE) {
+    const entries = [...cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toRemove = entries.slice(0, cache.size - MAX_CACHE_SIZE);
+    for (const [key] of toRemove) cache.delete(key);
+  }
+}
 
 async function fetchWithCache(url: string): Promise<any> {
   const cached = cache.get(url);
@@ -28,11 +41,16 @@ async function fetchWithCache(url: string): Promise<any> {
   }
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[ESPN] HTTP ${res.status} for ${url}`);
+      return null;
+    }
     const data = await res.json();
+    evictStaleCache();
     cache.set(url, { data, timestamp: Date.now() });
     return data;
-  } catch {
+  } catch (err) {
+    console.error(`[ESPN] Fetch error for ${url}:`, err);
     return null;
   }
 }
@@ -63,8 +81,9 @@ function parseESPNEvent(e: any, leagueKey: string, leagueName: string) {
 
   const dateStr = comp.date || e.date || "";
   const dateObj = new Date(dateStr);
-  const dateFormatted = dateObj.toISOString().slice(0, 10);
-  const timeFormatted = dateObj.toISOString().slice(11, 16);
+  const isValidDate = !isNaN(dateObj.getTime());
+  const dateFormatted = isValidDate ? dateObj.toISOString().slice(0, 10) : "";
+  const timeFormatted = isValidDate ? dateObj.toISOString().slice(11, 16) : "";
 
   const homeStats: Record<string, string> = {};
   for (const s of home.statistics || []) homeStats[s.name] = s.displayValue;
@@ -137,6 +156,7 @@ router.get("/leagues", (_req, res) => {
 });
 
 router.get("/live-matches", async (req, res) => {
+  try {
   const league = (req.query.league as string) || "epl";
   const leagueInfo = LEAGUES[league];
   if (!leagueInfo) {
@@ -158,9 +178,14 @@ router.get("/live-matches", async (req, res) => {
   results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   res.json({ league: leagueInfo, upcoming, results });
+  } catch (err) {
+    console.error("[FOOTBALL] live-matches error:", err);
+    res.status(500).json({ error: "Failed to fetch live matches" });
+  }
 });
 
 router.get("/all-matches", async (_req, res) => {
+  try {
   const now = new Date();
   const past14 = new Date(now);
   past14.setDate(past14.getDate() - 14);
@@ -190,9 +215,14 @@ router.get("/all-matches", async (_req, res) => {
     upcoming: upcoming.slice(0, 80),
     results: results.slice(0, 80),
   });
+  } catch (err) {
+    console.error("[FOOTBALL] all-matches error:", err);
+    res.status(500).json({ error: "Failed to fetch matches" });
+  }
 });
 
 router.get("/standings", async (req, res) => {
+  try {
   const league = (req.query.league as string) || "epl";
   const leagueInfo = LEAGUES[league];
   if (!leagueInfo) {
@@ -234,9 +264,14 @@ router.get("/standings", async (req, res) => {
   standings.sort((a: any, b: any) => a.rank - b.rank);
 
   res.json({ league: leagueInfo, standings });
+  } catch (err) {
+    console.error("[FOOTBALL] standings error:", err);
+    res.status(500).json({ error: "Failed to fetch standings" });
+  }
 });
 
 router.get("/match-detail/:leagueKey/:espnId", async (req, res) => {
+  try {
   const { leagueKey, espnId } = req.params;
   const leagueInfo = LEAGUES[leagueKey];
   if (!leagueInfo) {
@@ -318,9 +353,14 @@ router.get("/match-detail/:leagueKey/:espnId", async (req, res) => {
     head_to_head: h2h,
     broadcasts: (data.broadcasts || []).flatMap((b: any) => b.market ? [`${b.station} (${b.market})`] : [b.station]).filter(Boolean),
   });
+  } catch (err) {
+    console.error("[FOOTBALL] match-detail error:", err);
+    res.status(500).json({ error: "Failed to fetch match detail" });
+  }
 });
 
 router.get("/ai-analysis/:leagueKey/:espnId", async (req, res) => {
+  try {
   const { leagueKey, espnId } = req.params;
   const leagueInfo = LEAGUES[leagueKey];
   if (!leagueInfo) return res.status(400).json({ error: "Unknown league" });
@@ -362,8 +402,10 @@ router.get("/ai-analysis/:leagueKey/:espnId", async (req, res) => {
     else h2hAwayWins++;
   }
 
-  const parseRecord = (rec: string) => {
-    const parts = rec.split("-").map(Number);
+  const parseRecord = (rec: any) => {
+    if (!rec) return { w: 0, d: 0, l: 0 };
+    const str = typeof rec === "string" ? rec : String(rec);
+    const parts = str.split("-").map(Number);
     return { w: parts[0] || 0, d: parts[1] || 0, l: parts[2] || 0 };
   };
   const hr = parseRecord(homeRecord);
@@ -481,9 +523,14 @@ router.get("/ai-analysis/:leagueKey/:espnId", async (req, res) => {
     awayRecord,
     h2hSummary: { homeWins: h2hHomeWins, draws: h2hDraws, awayWins: h2hAwayWins, total: h2h.length },
   });
+  } catch (err) {
+    console.error("[FOOTBALL] ai-analysis error:", err);
+    res.status(500).json({ error: "Failed to generate analysis" });
+  }
 });
 
 router.get("/betting-picks", async (_req, res) => {
+  try {
   const now = new Date();
   const future7 = new Date(now);
   future7.setDate(future7.getDate() + 7);
@@ -574,9 +621,14 @@ router.get("/betting-picks", async (_req, res) => {
   };
 
   res.json({ picks, stats });
+  } catch (err) {
+    console.error("[FOOTBALL] betting-picks error:", err);
+    res.status(500).json({ error: "Failed to fetch betting picks" });
+  }
 });
 
 router.get("/team/:name", async (req, res) => {
+  try {
   const teamName = req.params.name;
   const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/teams?limit=100`;
   const data = await fetchWithCache(url);
@@ -606,6 +658,10 @@ router.get("/team/:name", async (req, res) => {
     description: null,
     formed: null,
   });
+  } catch (err) {
+    console.error("[FOOTBALL] team error:", err);
+    res.status(500).json({ error: "Failed to fetch team" });
+  }
 });
 
 export default router;

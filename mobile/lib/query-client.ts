@@ -19,6 +19,17 @@ export function setAuthToken(token: string | null) {
   _authToken = token;
 }
 
+export class ApiError extends Error {
+  status: number;
+  body: any;
+  constructor(status: number, message: string, body?: any) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
 export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_URL}${path}`;
   const headers: Record<string, string> = {
@@ -28,16 +39,42 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
   if (_authToken) {
     headers["Authorization"] = `Bearer ${_authToken}`;
   }
-  const res = await fetch(url, { ...options, headers });
-  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
-  return res.json() as Promise<T>;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+    if (!res.ok) {
+      let body: any;
+      try { body = await res.json(); } catch {}
+      const message = body?.error || `API error ${res.status}`;
+      throw new ApiError(res.status, message, body);
+    }
+    return res.json() as Promise<T>;
+  } catch (err: any) {
+    if (err instanceof ApiError) throw err;
+    if (err.name === "AbortError") {
+      throw new ApiError(0, "Request timed out. Check your connection.");
+    }
+    throw new ApiError(0, "Network error. Please check your connection.");
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60 * 1000,
-      retry: 2,
+      retry: (failureCount, error) => {
+        if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
+        return failureCount < 2;
+      },
+      gcTime: 5 * 60 * 1000,
+    },
+    mutations: {
+      retry: false,
     },
   },
 });

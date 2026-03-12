@@ -4,13 +4,14 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: football_betting
+      POSTGRES_DB: kicksight
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -22,6 +23,21 @@ services:
     ports:
       - "6379:6379"
 
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/kicksight
+      JWT_SECRET: change-me-in-production
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+
   backend:
     build:
       context: .
@@ -31,25 +47,14 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/football_betting
-      DATABASE_URL_SYNC: postgresql+psycopg2://postgres:postgres@db:5432/football_betting
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/kicksight
+      DATABASE_URL_SYNC: postgresql+psycopg2://postgres:postgres@db:5432/kicksight
       REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://backend:8000
-    depends_on:
-      - backend
 
 volumes:
   pgdata:

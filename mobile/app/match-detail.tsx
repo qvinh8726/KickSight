@@ -19,9 +19,39 @@ import { apiRequest } from "@/lib/query-client";
 import { useTheme } from "@/lib/theme-context";
 import { useI18n } from "@/lib/i18n";
 
+interface MatchDetailData {
+  home_stats?: Record<string, string>;
+  away_stats?: Record<string, string>;
+  key_events?: Array<{ clock: string; type: string; text: string }>;
+  head_to_head?: Array<{ date: string; home: string; away: string; home_score: number; away_score: number }>;
+  home_record?: string;
+  away_record?: string;
+  home_form?: string;
+  away_form?: string;
+  venue?: string;
+  venue_city?: string;
+  attendance?: number;
+  referee?: string;
+}
+
+interface AIAnalysisData {
+  probHome: number;
+  probDraw: number;
+  probAway: number;
+  projectedScore: string;
+  homeExpGoals: number;
+  awayExpGoals: number;
+  confidence: number;
+  riskLevel: "low" | "medium" | "high";
+  recommendation: string;
+  picks?: Array<{ market: string; odds: number; pick: string; probability: number }>;
+  keyFactors?: string[];
+}
+
 function TeamBadge({ uri, size = 48 }: { uri: string | null; size?: number }) {
-  if (!uri) return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#1C254040" }} />;
-  return <Image source={{ uri }} style={{ width: size, height: size }} resizeMode="contain" />;
+  const [failed, setFailed] = React.useState(false);
+  if (!uri || failed) return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#1C254040" }} />;
+  return <Image source={{ uri }} style={{ width: size, height: size }} resizeMode="contain" onError={() => setFailed(true)} />;
 }
 
 function FormBadges({ form }: { form: string | null }) {
@@ -105,13 +135,13 @@ export default function MatchDetailScreen() {
     awayRecord: string;
   }>();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<MatchDetailData>({
     queryKey: ["/api/football/match-detail", params.leagueKey, params.espnId],
     queryFn: () => apiRequest(`/api/football/match-detail/${params.leagueKey}/${params.espnId}`),
     enabled: !!params.leagueKey && !!params.espnId,
   });
 
-  const { data: aiData, isLoading: aiLoading, refetch: fetchAI } = useQuery({
+  const { data: aiData, isLoading: aiLoading, refetch: fetchAI } = useQuery<AIAnalysisData>({
     queryKey: ["/api/football/ai-analysis", params.leagueKey, params.espnId],
     queryFn: () => apiRequest(`/api/football/ai-analysis/${params.leagueKey}/${params.espnId}`),
     enabled: false,
@@ -149,11 +179,11 @@ export default function MatchDetailScreen() {
     "Offsides", "Yellow Cards", "Red Cards", "Saves",
   ];
 
-  const homeStats: Record<string, string> = (data as any)?.home_stats || {};
-  const awayStats: Record<string, string> = (data as any)?.away_stats || {};
-  const keyEvents: any[] = (data as any)?.key_events || [];
-  const h2h: any[] = (data as any)?.head_to_head || [];
-  const ai = aiData as any;
+  const homeStats: Record<string, string> = data?.home_stats || {};
+  const awayStats: Record<string, string> = data?.away_stats || {};
+  const keyEvents = data?.key_events || [];
+  const h2h = data?.head_to_head || [];
+  const ai = aiData;
 
   const RISK_COLORS: Record<string, string> = { low: "#00C853", medium: "#FFA726", high: "#FF5252" };
 
@@ -180,7 +210,7 @@ export default function MatchDetailScreen() {
             <View style={styles.teamCol}>
               <TeamBadge uri={params.homeBadge || null} size={52} />
               <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>{params.homeTeam}</Text>
-              {(params.homeRecord || (data as any)?.home_record) && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.homeRecord || (data as any)?.home_record}</Text>}
+              {(params.homeRecord || data?.home_record) && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.homeRecord || data?.home_record}</Text>}
             </View>
 
             <View style={styles.scoreCol}>
@@ -206,18 +236,18 @@ export default function MatchDetailScreen() {
             <View style={styles.teamCol}>
               <TeamBadge uri={params.awayBadge || null} size={52} />
               <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>{params.awayTeam}</Text>
-              {(params.awayRecord || (data as any)?.away_record) && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.awayRecord || (data as any)?.away_record}</Text>}
+              {(params.awayRecord || data?.away_record) && <Text style={[styles.teamRecord, { color: colors.textMuted }]}>{params.awayRecord || data?.away_record}</Text>}
             </View>
           </View>
 
           <View style={styles.formRow}>
             <View style={styles.formCol}>
               <Text style={[styles.formLabel, { color: colors.textMuted }]}>{t.form}</Text>
-              <FormBadges form={params.homeForm || (data as any)?.home_form || null} />
+              <FormBadges form={params.homeForm || data?.home_form || null} />
             </View>
             <View style={styles.formCol}>
               <Text style={[styles.formLabel, { color: colors.textMuted }]}>{t.form}</Text>
-              <FormBadges form={params.awayForm || (data as any)?.away_form || null} />
+              <FormBadges form={params.awayForm || data?.away_form || null} />
             </View>
           </View>
         </View>
@@ -237,25 +267,25 @@ export default function MatchDetailScreen() {
             <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
             <Text style={[styles.infoText, { color: colors.text }]}>{fmtDate(params.date)}</Text>
           </View>
-          {(params.venue || (data as any)?.venue) && (
+          {(params.venue || data?.venue) && (
             <View style={styles.infoRow}>
               <Ionicons name="location-outline" size={16} color={colors.textMuted} />
               <Text style={[styles.infoText, { color: colors.text }]}>
-                {(data as any)?.venue || params.venue}
-                {(data as any)?.venue_city ? `, ${(data as any).venue_city}` : ""}
+                {data?.venue || params.venue}
+                {data?.venue_city ? `, ${data.venue_city}` : ""}
               </Text>
             </View>
           )}
-          {(data as any)?.attendance && (
+          {data?.attendance && (
             <View style={styles.infoRow}>
               <Ionicons name="people-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.infoText, { color: colors.text }]}>{Number((data as any).attendance).toLocaleString()}</Text>
+              <Text style={[styles.infoText, { color: colors.text }]}>{Number(data.attendance).toLocaleString()}</Text>
             </View>
           )}
-          {(data as any)?.referee && (
+          {data?.referee && (
             <View style={styles.infoRow}>
               <Ionicons name="person-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.infoText, { color: colors.text }]}>{t.referee}: {(data as any).referee}</Text>
+              <Text style={[styles.infoText, { color: colors.text }]}>{t.referee}: {data.referee}</Text>
             </View>
           )}
         </View>
@@ -324,8 +354,8 @@ export default function MatchDetailScreen() {
       </ScrollView>
 
       <Modal visible={showAI} transparent animationType="slide" onRequestClose={() => setShowAI(false)}>
-        <View style={[styles.aiModalOverlay, { backgroundColor: colors.bg + "F5" }]}>
-          <View style={[styles.aiModalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.aiModalOverlay, { backgroundColor: colors.bg + "F5" }]} accessibilityRole="none">
+          <View style={[styles.aiModalContent, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="summary" accessibilityLabel="AI Analysis">
             <View style={styles.aiModalHeader}>
               <View style={styles.aiModalHeaderLeft}>
                 <MaterialCommunityIcons name="robot" size={22} color={colors.accent} />

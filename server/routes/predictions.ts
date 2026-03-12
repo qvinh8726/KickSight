@@ -22,14 +22,25 @@ router.get("/", async (req: AuthRequest, res: Response) => {
 router.post("/", async (req: AuthRequest, res: Response) => {
   try {
     const { homeTeam, awayTeam, competition, predictedOutcome, confidence, homeWinProb, drawProb, awayWinProb, notes } = req.body;
-    if (!homeTeam || !awayTeam) {
+    if (!homeTeam || !awayTeam || typeof homeTeam !== "string" || typeof awayTeam !== "string") {
       return res.status(400).json({ error: "Home team and away team are required" });
     }
+    if (homeTeam.length > 100 || awayTeam.length > 100) {
+      return res.status(400).json({ error: "Team name too long" });
+    }
+    if (notes && (typeof notes !== "string" || notes.length > 500)) {
+      return res.status(400).json({ error: "Notes must be a string of max 500 characters" });
+    }
+    if (confidence !== null && confidence !== undefined && (typeof confidence !== "number" || confidence < 0 || confidence > 1)) {
+      return res.status(400).json({ error: "Confidence must be between 0 and 1" });
+    }
+    const clean = (s: any) => typeof s === "string" ? s.slice(0, 200) : null;
+    const clampProb = (v: any) => typeof v === "number" ? Math.max(0, Math.min(1, v)) : null;
     const result = await query(
       `INSERT INTO predictions (user_id, home_team, away_team, competition, predicted_outcome, confidence, home_win_prob, draw_prob, away_win_prob, notes)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [req.userId, homeTeam, awayTeam, competition || null, predictedOutcome || null, confidence || null, homeWinProb || null, drawProb || null, awayWinProb || null, notes || null]
+      [req.userId, clean(homeTeam), clean(awayTeam), clean(competition), clean(predictedOutcome), clampProb(confidence), clampProb(homeWinProb), clampProb(drawProb), clampProb(awayWinProb), clean(notes)]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -40,9 +51,13 @@ router.post("/", async (req: AuthRequest, res: Response) => {
 
 router.delete("/:id", async (req: AuthRequest, res: Response) => {
   try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: "Invalid prediction ID" });
+    }
     const result = await query(
       "DELETE FROM predictions WHERE id = $1 AND user_id = $2 RETURNING id",
-      [req.params.id, req.userId]
+      [id, req.userId]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Prediction not found" });

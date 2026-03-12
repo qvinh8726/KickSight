@@ -67,7 +67,9 @@ class FeatureBuilder:
         for col in X.select_dtypes(include=["bool"]).columns:
             X[col] = X[col].astype(int)
 
-        X = X.fillna(X.median())
+        medians = X.median()
+        X = X.fillna(medians).fillna(0)
+        X = X.replace([np.inf, -np.inf], 0)
         y = finished[target]
 
         return X, y
@@ -77,5 +79,7 @@ class FeatureBuilder:
         X = df[available_features].copy()
         for col in X.select_dtypes(include=["bool"]).columns:
             X[col] = X[col].astype(int)
-        X = X.fillna(X.median())
+        medians = X.median()
+        X = X.fillna(medians).fillna(0)
+        X = X.replace([np.inf, -np.inf], 0)
         return X

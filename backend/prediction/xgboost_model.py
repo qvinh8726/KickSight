@@ -54,15 +54,16 @@ class XGBoostPredictor:
     ) -> dict:
         y_encoded = self.encoder.fit_transform(y_1x2)
 
-        params_1x2 = {k: v for k, v in self.params.items() if k != "n_estimators"}
+        skip_keys = {"n_estimators", "eval_metric"}
+        params_1x2 = {k: v for k, v in self.params.items() if k not in skip_keys}
         n_estimators = self.params.get("n_estimators", 500)
 
-        self.model_1x2 = xgb.XGBClassifier(n_estimators=n_estimators, **params_1x2)
-        self.model_1x2.fit(
-            X, y_encoded,
-            eval_set=[(X, y_encoded)],
-            verbose=False,
+        self.model_1x2 = xgb.XGBClassifier(
+            n_estimators=n_estimators,
+            eval_metric="mlogloss",
+            **params_1x2,
         )
+        self.model_1x2.fit(X, y_encoded, verbose=False)
 
         self.feature_importance_ = dict(
             zip(X.columns, self.model_1x2.feature_importances_)
@@ -73,7 +74,7 @@ class XGBoostPredictor:
         if y_ou25 is not None:
             params_binary = {
                 k: v for k, v in self.params.items()
-                if k not in ("num_class", "objective", "n_estimators")
+                if k not in ("num_class", "objective", "n_estimators", "eval_metric")
             }
             self.model_ou25 = xgb.XGBClassifier(
                 n_estimators=n_estimators,
@@ -87,7 +88,7 @@ class XGBoostPredictor:
         if y_btts is not None:
             params_binary = {
                 k: v for k, v in self.params.items()
-                if k not in ("num_class", "objective", "n_estimators")
+                if k not in ("num_class", "objective", "n_estimators", "eval_metric")
             }
             self.model_btts = xgb.XGBClassifier(
                 n_estimators=n_estimators,

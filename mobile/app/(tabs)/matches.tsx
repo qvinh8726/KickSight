@@ -72,8 +72,9 @@ function groupByDate(matches: LiveMatch[], t?: any) {
 }
 
 function TeamBadge({ uri, size = 28 }: { uri: string | null; size?: number }) {
-  if (!uri) return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#1C254040" }} />;
-  return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: 4 }} resizeMode="contain" />;
+  const [failed, setFailed] = React.useState(false);
+  if (!uri || failed) return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#1C254040" }} />;
+  return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: 4 }} resizeMode="contain" onError={() => setFailed(true)} />;
 }
 
 function FormBadges({ form, colors }: { form: string; colors: any }) {

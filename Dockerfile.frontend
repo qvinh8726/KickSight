@@ -1,18 +1,14 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json* ./
+
+COPY server/package.json server/package-lock.json* ./
 RUN npm install
-COPY frontend/ .
-RUN npm run build
 
-FROM node:20-alpine AS runner
-WORKDIR /app
+COPY server/ .
+COPY mobile/dist/ ../mobile/dist/
+
+EXPOSE 3001
+
 ENV NODE_ENV=production
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/public ./public
-
-EXPOSE 3000
 CMD ["npm", "start"]

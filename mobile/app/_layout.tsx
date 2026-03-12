@@ -10,6 +10,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
 import { NotificationsProvider } from "@/lib/notifications-context";
 import { I18nProvider } from "@/lib/i18n";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -107,22 +108,23 @@ export default function RootLayout() {
   }
 
   return (
-    <I18nProvider>
-      <ThemeProvider>
-        <NotificationsProvider>
-          <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <ThemedStatusBar />
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
-              </Stack>
-            </QueryClientProvider>
-          </AuthProvider>
-        </NotificationsProvider>
-      </ThemeProvider>
-    </I18nProvider>
+    <ErrorBoundary>
+      <I18nProvider>
+        <ThemeProvider>
+          <NotificationsProvider>
+            <AuthProvider>
+              <QueryClientProvider client={queryClient}>
+                <ThemedStatusBar />
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />                <Stack.Screen name="privacy-policy" options={{ headerShown: false, presentation: "modal" }} />                </Stack>
+              </QueryClientProvider>
+            </AuthProvider>
+          </NotificationsProvider>
+        </ThemeProvider>
+      </I18nProvider>
+    </ErrorBoundary>
   );
 }
 
